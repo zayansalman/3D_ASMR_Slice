@@ -18,6 +18,7 @@ public class chopSound : MonoBehaviour
     private void OnTriggerEnter(Collider other)
     {
         if (other.tag == "onion")
+            //AND TRANSFORM Y ORIENTATION IS DOWN
         {
             source.PlayDelayed(0.1f);
         }
