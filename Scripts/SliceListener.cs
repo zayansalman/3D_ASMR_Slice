@@ -1,4 +1,5 @@
-﻿using System.Collections;
+// Trigger bridge: when the knife/trigger volume hits something, sets slicer.isTouched so Slicer runs a cut next frame.
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 

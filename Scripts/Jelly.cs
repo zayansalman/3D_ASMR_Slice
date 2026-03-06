@@ -1,4 +1,5 @@
-﻿using System.Collections;
+// Jelly wobble: per-vertex spring motion so the mesh jiggles and settles. Intensity can vary by height for a soft-body feel.
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 

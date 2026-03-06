@@ -1,4 +1,5 @@
-﻿using System.Collections;
+// Spring-mass mesh deformation: AddDeformingForce dents the mesh; vertices spring back over time. Used for stress-ball style surfaces.
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -76,16 +77,16 @@ public class MeshDeformer : MonoBehaviour
     private void UpdateVertex(int i)
     {
         Vector3 velocity = vertexVelocities[i];
-        //return back to original shape 
         Vector3 displacement = displacedVertices[i] - originalVertices[i];
-        velocity -= displacement * springForce * Time.deltaTime;
-        //dampen and stop deforming
-        velocity *= 1f - damping * Time.deltaTime; 
-        vertexVelocities[i] = velocity; 
-        //
+        SpringStep(ref displacement, ref velocity, springForce, damping, Time.deltaTime);
+        vertexVelocities[i] = velocity;
+        displacedVertices[i] += velocity * Time.deltaTime;
+    }
 
-        displacedVertices[i] += velocity * Time.deltaTime; 
-
-
+    /// <summary>One step of spring-damper physics. Exposed for unit testing.</summary>
+    public static void SpringStep(ref Vector3 displacement, ref Vector3 velocity, float springForce, float damping, float deltaTime)
+    {
+        velocity -= displacement * springForce * deltaTime;
+        velocity *= Mathf.Clamp01(1f - damping * deltaTime);
     }
 }

@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -7,7 +7,14 @@ public class Grid : MonoBehaviour
 {
     public int xSize, ySize;
     public Vector3[] vertices;
-    private Mesh mesh; 
+    private Mesh mesh;
+
+    /// <summary>Expected vertex count for a grid of given dimensions. Used for tests and validation.</summary>
+    public static int GetExpectedVertexCount(int xSize, int ySize) => (xSize + 1) * (ySize + 1);
+
+    /// <summary>Expected triangle index count (3 per triangle). Used for tests and validation.</summary>
+    public static int GetExpectedTriangleCount(int xSize, int ySize) => xSize * ySize * 6;
+
     private void Awake()
     {
         Generate(); 

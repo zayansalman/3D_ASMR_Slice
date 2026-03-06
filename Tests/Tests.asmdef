@@ -1,0 +1,22 @@
+{
+    "name": "3D_ASMR_Slice.Tests",
+    "rootNamespace": "",
+    "references": [
+        "Assembly-CSharp",
+        "UnityEngine",
+        "UnityEditor",
+        "UnityEngine.TestRunner",
+        "nunit.framework"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

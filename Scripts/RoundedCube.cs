@@ -1,4 +1,5 @@
-﻿using System.Collections;
+// Procedural rounded-cube mesh with box + capsule colliders and rigidbody. Used for sliceable/squishable objects.
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 

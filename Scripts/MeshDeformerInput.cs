@@ -1,4 +1,5 @@
-﻿using System.Collections;
+// Mouse input for MeshDeformer: raycasts on click and applies AddDeformingForce at the hit point. For PC/editor testing.
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 

@@ -1,4 +1,5 @@
-﻿using System.Collections;
+// Plays a chop sound when the knife/trigger hits onion or garlic. Attach to the slicing object with an AudioSource.
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 

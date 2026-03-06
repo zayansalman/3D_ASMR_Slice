@@ -1,4 +1,5 @@
-﻿using System.Collections;
+// Touch controls for the knife: first finger drag = move X/Y, second finger drag = rotate. For mobile/touch devices.
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 

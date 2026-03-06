@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 //https://catlikecoding.com/unity/tutorials/cube-sphere/
@@ -8,6 +8,15 @@ public class CubeSphere : MonoBehaviour
 
 {
     public int gridSize;
+
+    /// <summary>Expected vertex count for a cube-sphere of given grid size. Used for tests and validation.</summary>
+    public static int GetExpectedVertexCount(int gridSize)
+    {
+        int cornerVertices = 8;
+        int edgeVertices = (gridSize + gridSize + gridSize - 3) * 4;
+        int faceVertices = ((gridSize - 1) * (gridSize - 1) + (gridSize - 1) * (gridSize - 1) + (gridSize - 1) * (gridSize - 1)) * 2;
+        return cornerVertices + edgeVertices + faceVertices;
+    }
     //public int roundness;
 
     private Mesh mesh;

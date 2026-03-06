@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+// Core slicing logic: when triggered, finds sliceable objects (onion/garlic/sand) via OverlapBox,
+// cuts them with EzySlice into upper/lower hulls, applies materials and physics. Sand uses a custom rolling shader.
+using UnityEngine;
 using EzySlice;
 public class Slicer : MonoBehaviour
 {
