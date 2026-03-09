@@ -36,13 +36,26 @@ The goal is a small, playable proof-of-concept that could support stress relief 
 
 | Feature | Description |
 |--------|-------------|
-| **Slice onions, garlic & sand** | Cut objects with a knife; they split with physics and materials. Chop sounds play on slice. |
-| **Touch controls** | One finger to move the knife, second finger to rotate it. Built for phones/tablets. |
-| **Deformable surfaces** | Tap or drag on soft meshes; they dent and spring back (stress-ball style). |
-| **Jelly wobble** | Squishy objects that jiggle and settle. |
-| **Procedural shapes** | Rounded cubes and cube-spheres generated at runtime for slicing and squishing. |
+| **30 levels across 3 worlds** | Slice (cut vegetables), Squish (stress-ball deformation), Jelly (wobble physics). Escalating difficulty with time pressure. |
+| **Scoring & combos** | Rapid actions within 1.5s build a combo multiplier (x2, x3, x4…). Time bonuses on timed levels. |
+| **Star ratings** | 1–3 stars per level based on score. Collect stars to unlock cosmetics. |
+| **Unlockable knives** | Classic, Cleaver (★10), Katana (★25), Laser (★45) — each with unique geometry and materials. |
+| **Background themes** | Midnight, Deep Space (★15), Sunset (★30), Ocean (★50). |
+| **Slice onions, garlic, carrots, watermelon, cucumber** | Objects split with physics; chop sounds play on slice. |
+| **Deformable surfaces** | Tap or drag on stress balls; they dent and spring back. |
+| **Jelly wobble** | Squishy jelly cubes that jiggle and settle on poke. |
+| **Touch controls** | One finger to interact, second finger to rotate (slice mode). Built for phones/tablets. |
+| **Juice** | Screen shake, haptic feedback, combo float text, slow-motion on level completion, particle bursts scaled to combo. |
 
 **Best experience:** Touch screen + headphones (play on your phone for the full effect).
+
+### Monetization roadmap
+
+This codebase is structured for mobile wrapping via [Capacitor](https://capacitorjs.com/). Next steps:
+
+1. `npm init` + Capacitor setup to wrap as iOS/Android app
+2. [AdMob](https://admob.google.com/) interstitial ads between levels (ad placement div already wired)
+3. App Store / Google Play submission with screenshots and metadata
 
 ---
 
