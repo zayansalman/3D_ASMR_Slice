@@ -168,7 +168,9 @@ scene.add(new THREE.AmbientLight(0x6666aa, 0.5));
 const sun = new THREE.DirectionalLight(0xffeedd, 1.2);
 sun.position.set(4, 8, 5); sun.castShadow = true;
 sun.shadow.mapSize.set(1024, 1024); scene.add(sun);
-scene.add(Object.assign(new THREE.PointLight(0x8888ff, 0.5, 16), { position: new THREE.Vector3(-4, 3, -3) }));
+const fillLight = new THREE.PointLight(0x8888ff, 0.5, 16);
+fillLight.position.set(-4, 3, -3);
+scene.add(fillLight);
 
 const ground = new THREE.Mesh(
   new THREE.PlaneGeometry(24, 24),
