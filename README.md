@@ -10,6 +10,14 @@
 
 > No install needed — click the link above to play the web version. The browser build is a faithful JavaScript/Three.js port of the original C# Unity scripts in `Scripts/`. Every physics formula, variable name, and constant is preserved from the dissertation code, with inline comments referencing the original C# source files and line numbers. See [`web-build/index.html`](web-build/index.html) for the port.
 
+### Dissertation evidence
+
+| Evidence | Link |
+|----------|------|
+| **Playable game** | [https://zayansalman.github.io/3D_ASMR_Slice/](https://zayansalman.github.io/3D_ASMR_Slice/) |
+| **Original C# implementation** | [Scripts/](Scripts/) (MeshDeformer, Jelly, Slicer, TouchControl2, chopSound, CubeSphere, etc.) |
+| **Web port (faithful translation)** | [web-build/index.html](web-build/index.html) — same algorithms and constants, with inline references to C# source lines |
+
 ---
 
 ## Why this project?
