@@ -52,17 +52,43 @@ This lets anyone with a link play in the browser (great for portfolios and shari
 
 1. **File → Build Settings**.
 2. Select **WebGL** in the Platform list → **Switch Platform** (if needed).
-3. **Player Settings** (optional):
-   - **Resolution and Presentation**: default template is fine; adjust fullscreen if you like.
-   - **Publishing Settings**: enable **Compression** (e.g. Gzip) to reduce load time.
+3. **Player Settings** (recommended for this project):
+   - **Resolution and Presentation**
+     - Template: **Default**.
+     - Run in background: **off** (optional).
+     - Display: allow fullscreen; keep default aspect ratio (Unity will letterbox as needed).
+   - **Quality**
+     - Use a mid-range quality level (e.g. **Medium**) for WebGL to balance visuals and load time.
+     - Disable expensive post-processing effects if you later add them; the core slicing/deformation works fine without them.
+   - **Publishing Settings**
+     - Enable **Compression** (e.g. **Gzip** or **Brotli**) to reduce download size.
+     - Leave **Decompression Fallback** enabled unless you know your host/browser combination does not need it.
+   - **Input & UX**
+     - Ensure your main scene has both `TouchControl2` (for touch devices) and sensible mouse controls (via `MeshDeformerInput` and/or temporary mouse mappings) so the WebGL build is playable with a mouse.
+     - Add a simple UI text panel (optional) explaining controls, e.g. “Drag to move knife; second finger (or right mouse drag) to rotate.”
 4. **Build** (or **Build And Run**):
    - Choose an empty folder, e.g. `Builds/WebGL`.
    - Unity will produce an `index.html` and a `Build` folder (and related files).
 
 **Hosting:**
 
-- **GitHub Pages:** Push the contents of the WebGL build folder to a `gh-pages` branch or to `docs/` in the repo, then enable GitHub Pages in the repo settings.
-- **itch.io:** Create a project, upload the WebGL build as a zip (or drag the folder), set “This file will be played in the browser” and choose the correct index.
+- **GitHub Pages (CI-based, recommended):**
+  - Make sure this repo is on GitHub and that GitHub Pages is enabled with **Source: GitHub Actions**.
+  - The workflow at `.github/workflows/webgl-build-and-deploy.yml` will:
+    - Build a WebGL player into `Builds/WebGL` using Unity in CI.
+    - Upload `Builds/WebGL` as a Pages artifact and deploy it.
+  - After the first successful run, your game will be live at:
+    - `https://YOUR_GITHUB_USERNAME.github.io/3D_ASMR_Slice/`
+  - You must provide a valid Unity license in the repo secrets as `UNITY_LICENSE` (see the comments in the workflow file and Unity/game-ci docs for how to generate this).
+
+- **Manual GitHub Pages / other static hosts:**
+  - Build locally as above.
+  - Push or upload the contents of your `Builds/WebGL` folder to any static host (including a `gh-pages` branch or `docs/` folder) and point your host to `index.html`.
+
+- **itch.io (future monetization path):**
+  - Create a project on itch.io and choose **“HTML5” / “This file will be played in the browser”**.
+  - Zip the contents of your `Builds/WebGL` folder and upload it as a build.
+  - On the itch.io project page, you can later enable donations or ads as part of your monetization setup.
 
 **Note:** WebGL has limited touch support depending on the browser; for the best “touch a carpet” / slice experience, mobile builds (Android/iOS) are ideal.
 

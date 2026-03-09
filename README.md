@@ -66,10 +66,16 @@ The goal is a small, playable proof-of-concept that could support stress relief 
    - Double-click the main scene (e.g. slicing + deformation setup)
    - Press **Play**
 
-4. **On a touch device**
+4. **Play in the browser (WebGL)**
+   - Once GitHub Pages is enabled for this repo, the CI pipeline will publish a WebGL build.
+   - The default URL will be:
+     - `https://YOUR_GITHUB_USERNAME.github.io/3D_ASMR_Slice/`
+   - Replace `YOUR_GITHUB_USERNAME` with your GitHub handle and enable **GitHub Pages → Source: GitHub Actions** in your repo settings.
+
+5. **On a touch device**
    - Build to Android/iOS from **File → Build Settings**, or use [Unity Remote](https://docs.unity3d.com/Manual/UnityRemote5.html) for quick testing
 
-For detailed setup, build options (WebGL, mobile), and troubleshooting, see **[Building & running](docs/BUILD_AND_RUN.md)**.
+For detailed setup, build options (WebGL, mobile), CI-based WebGL deployment, and troubleshooting, see **[Building & running](docs/BUILD_AND_RUN.md)**.
 
 ---
 

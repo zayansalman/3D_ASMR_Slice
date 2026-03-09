@@ -1,0 +1,62 @@
+name: Build and deploy WebGL to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+
+    env:
+      UNITY_VERSION: 2019.4.40f1
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Cache Unity Library
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-${{ runner.os }}-${{ env.UNITY_VERSION }}
+          restore-keys: |
+            Library-${{ runner.os }}-
+
+      - name: Activate Unity
+        uses: game-ci/unity-activate@v3
+        with:
+          unityVersion: ${{ env.UNITY_VERSION }}
+          unityLicense: ${{ secrets.UNITY_LICENSE }}
+
+      - name: Build WebGL player
+        uses: game-ci/unity-builder@v4
+        with:
+          unityVersion: ${{ env.UNITY_VERSION }}
+          targetPlatform: WebGL
+          buildName: asmr-webgl
+          buildsPath: Builds
+
+      - name: Verify WebGL build output
+        run: |
+          ls -R Builds || exit 1
+          if [ ! -f Builds/WebGL/index.html ]; then
+            echo \"index.html not found in Builds/WebGL; check Unity Build Settings and scene configuration.\"
+            exit 1
+          fi
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: Builds/WebGL
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
+
