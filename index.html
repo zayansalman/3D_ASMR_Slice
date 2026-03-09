@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>3D ASMR Stress Relief Game — Web Port</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      overflow: hidden;
+      background: #1a1a2e;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      touch-action: none;
+      -webkit-user-select: none;
+      user-select: none;
+    }
+    canvas { display: block; }
+    #ui {
+      position: fixed; top: 0; left: 0; right: 0;
+      pointer-events: none; z-index: 10;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 14px;
+    }
+    #title {
+      color: #e0e0ff; font-size: 20px; font-weight: 600;
+      letter-spacing: 0.5px;
+      text-shadow: 0 2px 10px rgba(100,100,255,0.25);
+    }
+    #subtitle {
+      color: #7777aa; font-size: 12px; margin-top: 2px;
+    }
+    #hint {
+      color: #8888bb; font-size: 13px; margin-top: 6px; text-align: center;
+    }
+    #mode-bar {
+      position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
+      display: flex; gap: 8px; z-index: 10;
+    }
+    .mbtn {
+      padding: 9px 18px; border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px; background: rgba(255,255,255,0.05);
+      color: #b0b0d0; font-size: 13px; cursor: pointer;
+      transition: all 0.2s; backdrop-filter: blur(6px);
+    }
+    .mbtn:hover { background: rgba(255,255,255,0.1); }
+    .mbtn.active {
+      background: rgba(110,110,255,0.2); border-color: rgba(110,110,255,0.45);
+      color: #fff;
+    }
+    #stats {
+      position: fixed; top: 72px; right: 16px;
+      color: #9999bb; font-size: 13px; z-index: 10;
+    }
+    #reset-btn {
+      position: fixed; bottom: 56px; left: 50%; transform: translateX(-50%);
+      padding: 6px 16px; border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 14px; background: rgba(255,255,255,0.04);
+      color: #8888aa; font-size: 12px; cursor: pointer; z-index: 10;
+    }
+    #reset-btn:hover { background: rgba(255,255,255,0.08); color: #bbb; }
+  </style>
+</head>
+<body>
+  <div id="ui">
+    <div id="title">ASMR Stress Relief</div>
+    <div id="subtitle">Web port of Unity C# dissertation project by Zayan Khan</div>
+    <div id="hint"></div>
+  </div>
+  <div id="stats">Slices: <span id="slice-count">0</span></div>
+  <div id="mode-bar">
+    <button class="mbtn active" data-mode="slice">Slice</button>
+    <button class="mbtn" data-mode="squish">Squish</button>
+    <button class="mbtn" data-mode="jelly">Jelly</button>
+  </div>
+  <button id="reset-btn">Reset objects</button>
+
+  <script type="importmap">
+  { "imports": {
+      "three": "https://esm.sh/three@0.160.0",
+      "three/addons/": "https://esm.sh/three@0.160.0/examples/jsm/"
+  }}
+  </script>
+  <script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// ════════════════════════════════════════════════════════════════════
+//  Web Audio — port of chopSound.cs
+//  Original: source.PlayDelayed(0.1f) on OnTriggerEnter with
+//  "onion" or "garlic" tags  (Scripts/chopSound.cs:19-31)
+// ════════════════════════════════════════════════════════════════════
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx;
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new AudioCtx();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+// Synthesised chop — plays after 0.1 s delay matching PlayDelayed(0.1f)
+function playChopSound() {
+  ensureAudio();
+  const delay = 0.1; // chopSound.cs:24 — source.PlayDelayed(0.1f)
+  const now = audioCtx.currentTime + delay;
+  const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.12, audioCtx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (d.length * 0.12));
+  const src = audioCtx.createBufferSource(); src.buffer = buf;
+  const hp = audioCtx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 900;
+  const g = audioCtx.createGain();
+  g.gain.setValueAtTime(0.45, now);
+  g.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+  src.connect(hp).connect(g).connect(audioCtx.destination);
+  src.start(now); src.stop(now + 0.15);
+}
+
+function playSquishSound() {
+  ensureAudio();
+  const now = audioCtx.currentTime;
+  const o = audioCtx.createOscillator(); o.type = 'sine';
+  o.frequency.setValueAtTime(160, now);
+  o.frequency.exponentialRampToValueAtTime(55, now + 0.18);
+  const g = audioCtx.createGain();
+  g.gain.setValueAtTime(0.25, now);
+  g.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+  o.connect(g).connect(audioCtx.destination);
+  o.start(now); o.stop(now + 0.25);
+}
+
+function playJellySound() {
+  ensureAudio();
+  const now = audioCtx.currentTime;
+  const o = audioCtx.createOscillator(); o.type = 'sine';
+  o.frequency.setValueAtTime(280, now);
+  o.frequency.exponentialRampToValueAtTime(100, now + 0.35);
+  const g = audioCtx.createGain();
+  g.gain.setValueAtTime(0.12, now);
+  g.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+  const lfo = audioCtx.createOscillator(); lfo.frequency.value = 14;
+  const lg = audioCtx.createGain(); lg.gain.value = 35;
+  lfo.connect(lg).connect(o.frequency);
+  o.connect(g).connect(audioCtx.destination);
+  lfo.start(now); o.start(now); lfo.stop(now + 0.45); o.stop(now + 0.45);
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  Three.js scene
+// ════════════════════════════════════════════════════════════════════
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1a1a2e);
+scene.fog = new THREE.Fog(0x1a1a2e, 10, 22);
+
+const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 100);
+camera.position.set(0, 3.5, 7);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(innerWidth, innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+document.body.appendChild(renderer.domElement);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true; controls.dampingFactor = 0.07;
+controls.maxPolarAngle = Math.PI / 2.05;
+controls.minDistance = 3; controls.maxDistance = 14;
+
+scene.add(new THREE.AmbientLight(0x6666aa, 0.5));
+const sun = new THREE.DirectionalLight(0xffeedd, 1.2);
+sun.position.set(4, 8, 5); sun.castShadow = true;
+sun.shadow.mapSize.set(1024, 1024); scene.add(sun);
+scene.add(Object.assign(new THREE.PointLight(0x8888ff, 0.5, 16), { position: new THREE.Vector3(-4, 3, -3) }));
+
+const ground = new THREE.Mesh(
+  new THREE.PlaneGeometry(24, 24),
+  new THREE.MeshStandardMaterial({ color: 0x22223a, roughness: 0.9 })
+);
+ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
+
+const board = new THREE.Mesh(
+  new THREE.BoxGeometry(4.5, 0.15, 3),
+  new THREE.MeshStandardMaterial({ color: 0x8B6F47, roughness: 0.65 })
+);
+board.position.y = 0.08; board.castShadow = true; board.receiveShadow = true;
+scene.add(board);
+
+// ════════════════════════════════════════════════════════════════════
+//  State
+// ════════════════════════════════════════════════════════════════════
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+let currentMode = 'slice';
+let sliceCount = 0;
+const sliceEl = document.getElementById('slice-count');
+const hintEl = document.getElementById('hint');
+
+const interactables = [];
+const fallingPieces = [];
+const particles = [];
+
+// Squish state (one object at a time)
+let squishData = null;
+// Jelly state
+let jellyData = null;
+
+// ════════════════════════════════════════════════════════════════════
+//  CubeSphere procedural geometry
+//  Port of Scripts/CubeSphere.cs:127-140 — SetVertex
+//  Uses the analytic cube-to-sphere mapping:
+//    s.x = v.x * sqrt(1 - y²/2 - z²/2 + y²z²/3)
+// ════════════════════════════════════════════════════════════════════
+function createCubeSphereGeometry(gridSize, radius) {
+  // CubeSphere.cs:125 — public float radius = 1f;
+  const r = radius || 1;
+  const positions = [];
+  const normals = [];
+
+  function setVertex(x, y, z) {
+    // CubeSphere.cs:129 — Vector3 v = new Vector3(x,y,z) * 2f / gridSize - Vector3.one
+    const vx = x * 2 / gridSize - 1;
+    const vy = y * 2 / gridSize - 1;
+    const vz = z * 2 / gridSize - 1;
+    // CubeSphere.cs:130-132
+    const x2 = vx * vx, y2 = vy * vy, z2 = vz * vz;
+    // CubeSphere.cs:134-136 — the cube-sphere mapping
+    const sx = vx * Math.sqrt(Math.max(0, 1 - y2 / 2 - z2 / 2 + y2 * z2 / 3));
+    const sy = vy * Math.sqrt(Math.max(0, 1 - x2 / 2 - z2 / 2 + x2 * z2 / 3));
+    const sz = vz * Math.sqrt(Math.max(0, 1 - x2 / 2 - y2 / 2 + x2 * y2 / 3));
+    normals.push(sx, sy, sz);
+    // CubeSphere.cs:138 — vertices[i] = normals[i] * radius
+    positions.push(sx * r, sy * r, sz * r);
+  }
+
+  const g = gridSize;
+  // CubeSphere uses the same ring-walk vertex layout as RoundedCube
+  // CubeSphere.cs:67-95 — ring walk for sides
+  for (let y = 0; y <= g; y++) {
+    for (let x = 0; x <= g; x++) setVertex(x, y, 0);
+    for (let z = 1; z <= g; z++) setVertex(g, y, z);
+    for (let x = g - 1; x >= 0; x--) setVertex(x, y, g);
+    for (let z = g - 1; z > 0; z--) setVertex(0, y, z);
+  }
+  // CubeSphere.cs:97-114 — top and bottom caps
+  for (let z = 1; z < g; z++) for (let x = 1; x < g; x++) setVertex(x, g, z);
+  for (let z = 1; z < g; z++) for (let x = 1; x < g; x++) setVertex(x, 0, z);
+
+  const ring = (g + g) * 2;
+  const indices = [];
+  // CubeSphere.cs:269-277 — SetQuad
+  function setQuad(v00, v10, v01, v11) {
+    indices.push(v00, v01, v10, v10, v01, v11);
+  }
+
+  // CubeSphere.cs:156-175 — side quads
+  let v = 0;
+  for (let y = 0; y < g; y++, v++) {
+    for (let q = 0; q < g; q++, v++) setQuad(v, v + 1, v + ring, v + ring + 1);
+    for (let q = 0; q < g; q++, v++) setQuad(v, v + 1, v + ring, v + ring + 1);
+    for (let q = 0; q < g; q++, v++) setQuad(v, v + 1, v + ring, v + ring + 1);
+    for (let q = 0; q < g - 1; q++, v++) setQuad(v, v + 1, v + ring, v + ring + 1);
+    setQuad(v, v - ring + 1, v + ring, v + 1);
+  }
+
+  // Top/bottom faces use BufferGeometry from the sphere for simplicity
+  // (the vertex layout matches CubeSphere but the top/bottom indexing is complex)
+
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geo.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+  return geo;
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  MeshDeformer — port of Scripts/MeshDeformer.cs
+//  springForce = 20f  (line 17)
+//  damping = 5f       (line 19)
+// ════════════════════════════════════════════════════════════════════
+class MeshDeformer {
+  constructor(mesh) {
+    this.mesh = mesh;
+    const pos = mesh.geometry.attributes.position;
+    const count = pos.count;
+    // MeshDeformer.cs:26-34 — copy original vertices, init velocities
+    this.originalVertices = new Float32Array(pos.array);
+    this.displacedVertices = new Float32Array(pos.array);
+    this.vertexVelocities = new Float32Array(count * 3);
+    // MeshDeformer.cs:17-19
+    this.springForce = 20;
+    this.damping = 5;
+  }
+
+  // Port of MeshDeformer.AddDeformingForce (Scripts/MeshDeformer.cs:39-50)
+  // force = 10f, forceOffset = 0.1f from MeshDeformerInput.cs:8-9
+  addDeformingForce(worldPoint, force) {
+    // MeshDeformer.cs:42 — point = transform.InverseTransformPoint(point)
+    const localPt = this.mesh.worldToLocal(worldPoint.clone());
+    const count = this.displacedVertices.length / 3;
+    for (let i = 0; i < count; i++) {
+      this.addForceToVertex(i, localPt, force);
+    }
+  }
+
+  // Port of MeshDeformer.AddForceToVertex (Scripts/MeshDeformer.cs:55-64)
+  addForceToVertex(i, point, force) {
+    const ix = i * 3, iy = ix + 1, iz = ix + 2;
+    // MeshDeformer.cs:57 — pointToVertex = displacedVertices[i] - point
+    const pvx = this.displacedVertices[ix] - point.x;
+    const pvy = this.displacedVertices[iy] - point.y;
+    const pvz = this.displacedVertices[iz] - point.z;
+    // MeshDeformer.cs:59 — attenuatedForce = force / (1f + pointToVertex.sqrMagnitude)
+    const sqrMag = pvx * pvx + pvy * pvy + pvz * pvz;
+    const attenuatedForce = force / (1 + sqrMag);
+    // MeshDeformer.cs:61 — velocity = attenuatedForce * Time.deltaTime
+    const dt = this._dt || 0.016;
+    const vel = attenuatedForce * dt;
+    // MeshDeformer.cs:63 — vertexVelocities[i] += pointToVertex.normalized * velocity
+    const mag = Math.sqrt(sqrMag) || 1;
+    this.vertexVelocities[ix] += (pvx / mag) * vel;
+    this.vertexVelocities[iy] += (pvy / mag) * vel;
+    this.vertexVelocities[iz] += (pvz / mag) * vel;
+  }
+
+  // Port of MeshDeformer.Update + UpdateVertex + SpringStep
+  // (Scripts/MeshDeformer.cs:67-91)
+  update(dt) {
+    this._dt = dt;
+    const count = this.displacedVertices.length / 3;
+    for (let i = 0; i < count; i++) {
+      this.updateVertex(i, dt);
+    }
+    // MeshDeformer.cs:73-74
+    this.mesh.geometry.attributes.position.array.set(this.displacedVertices);
+    this.mesh.geometry.attributes.position.needsUpdate = true;
+    this.mesh.geometry.computeVertexNormals();
+  }
+
+  // Port of MeshDeformer.UpdateVertex (Scripts/MeshDeformer.cs:77-84)
+  updateVertex(i, dt) {
+    const ix = i * 3, iy = ix + 1, iz = ix + 2;
+    // MeshDeformer.cs:79-80
+    let vx = this.vertexVelocities[ix];
+    let vy = this.vertexVelocities[iy];
+    let vz = this.vertexVelocities[iz];
+    const dx = this.displacedVertices[ix] - this.originalVertices[ix];
+    const dy = this.displacedVertices[iy] - this.originalVertices[iy];
+    const dz = this.displacedVertices[iz] - this.originalVertices[iz];
+
+    // MeshDeformer.SpringStep (Scripts/MeshDeformer.cs:87-91)
+    // velocity -= displacement * springForce * deltaTime
+    vx -= dx * this.springForce * dt;
+    vy -= dy * this.springForce * dt;
+    vz -= dz * this.springForce * dt;
+    // velocity *= Clamp01(1 - damping * deltaTime)
+    const dampFactor = Math.max(0, Math.min(1, 1 - this.damping * dt));
+    vx *= dampFactor;
+    vy *= dampFactor;
+    vz *= dampFactor;
+
+    this.vertexVelocities[ix] = vx;
+    this.vertexVelocities[iy] = vy;
+    this.vertexVelocities[iz] = vz;
+    // MeshDeformer.cs:83 — displacedVertices[i] += velocity * Time.deltaTime
+    this.displacedVertices[ix] += vx * dt;
+    this.displacedVertices[iy] += vy * dt;
+    this.displacedVertices[iz] += vz * dt;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  Jelly — port of Scripts/Jelly.cs
+//  intensity = 1f   (line 8)
+//  mass = 1f        (line 9)
+//  stifness = 1f    (line 10)  [sic — original typo preserved]
+//  damping = 0.75f  (line 11)
+// ════════════════════════════════════════════════════════════════════
+
+// Port of Jelly.JellyVertex (Scripts/Jelly.cs:50-68)
+class JellyVertex {
+  constructor(id, pos) {
+    this.ID = id;                          // Jelly.cs:52
+    this.position = pos.clone();           // Jelly.cs:53
+    this.velocity = new THREE.Vector3();   // Jelly.cs:53
+    this.force = new THREE.Vector3();      // Jelly.cs:53
+  }
+
+  // Port of JellyVertex.Shake (Scripts/Jelly.cs:61-68)
+  Shake(target, m, s, d) {
+    // Jelly.cs:63 — force = (target - position) * s
+    this.force.copy(target).sub(this.position).multiplyScalar(s);
+    // Jelly.cs:64 — velocity = (velocity + force / m) * d
+    this.velocity.add(this.force.clone().divideScalar(m)).multiplyScalar(d);
+    // Jelly.cs:65 — position += velocity
+    this.position.add(this.velocity);
+    // Jelly.cs:66-67 — settle threshold
+    const check = this.velocity.clone().add(this.force).add(this.force.clone().divideScalar(m));
+    if (check.length() < 0.001) this.position.copy(target);
+  }
+}
+
+class JellySystem {
+  constructor(mesh) {
+    this.mesh = mesh;
+    this.intensity = 1;       // Jelly.cs:8
+    this.mass = 1;            // Jelly.cs:9
+    this.stifness = 1;        // Jelly.cs:10  [sic]
+    this.damping = 0.75;      // Jelly.cs:11
+
+    const geo = mesh.geometry;
+    const pos = geo.attributes.position;
+    // Jelly.cs:21 — originalMesh = sharedMesh
+    this.originalVertices = new Float32Array(pos.array);
+    // Jelly.cs:26-28 — init JellyVertex array
+    this.jellyVertex = [];
+    for (let i = 0; i < pos.count; i++) {
+      const wp = new THREE.Vector3(pos.getX(i), pos.getY(i), pos.getZ(i));
+      mesh.localToWorld(wp); // Jelly.cs:28 — transform.TransformPoint
+      this.jellyVertex.push(new JellyVertex(i, wp));
+    }
+  }
+
+  // Trigger a poke — gives each vertex a velocity kick
+  poke(worldPoint, strength) {
+    for (const jv of this.jellyVertex) {
+      const dist = jv.position.distanceTo(worldPoint);
+      const kick = strength / (1 + dist * dist * 4);
+      const dir = jv.position.clone().sub(worldPoint).normalize();
+      jv.velocity.add(dir.multiplyScalar(kick));
+    }
+  }
+
+  // Port of Jelly.FixedUpdate (Scripts/Jelly.cs:35-48)
+  update() {
+    const pos = this.mesh.geometry.attributes.position;
+    for (let i = 0; i < this.jellyVertex.length; i++) {
+      const jv = this.jellyVertex[i];
+      // Jelly.cs:40 — target = transform.TransformPoint(vertexArray[jv.ID])
+      const ox = this.originalVertices[jv.ID * 3];
+      const oy = this.originalVertices[jv.ID * 3 + 1];
+      const oz = this.originalVertices[jv.ID * 3 + 2];
+      const target = new THREE.Vector3(ox, oy, oz);
+      this.mesh.localToWorld(target);
+
+      // Jelly.cs:42 — jellyVertex[i].Shake(target, mass, stifness, damping)
+      jv.Shake(target, this.mass, this.stifness, this.damping);
+
+      // Jelly.cs:43 — target = transform.InverseTransformPoint(jv.position)
+      const local = this.mesh.worldToLocal(jv.position.clone());
+
+      // Jelly.cs:44 — vertexArray[jv.ID] = Lerp(original, target, intensity)
+      const lx = ox + (local.x - ox) * this.intensity;
+      const ly = oy + (local.y - oy) * this.intensity;
+      const lz = oz + (local.z - oz) * this.intensity;
+      pos.setXYZ(jv.ID, lx, ly, lz);
+    }
+    pos.needsUpdate = true;
+    this.mesh.geometry.computeVertexNormals();
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  Slicer — port of Scripts/Slicer.cs
+//  Replicates the flow: knife trigger → OverlapBox → SliceObject
+//  → CreateUpperHull / CreateLowerHull → MakeItPhysical → Destroy
+//  Tags: "onion", "garlic" with different inside materials
+//  EzySlice can't run in the browser; we replicate the hull split
+//  geometrically by clipping vertices above/below the slice plane.
+// ════════════════════════════════════════════════════════════════════
+
+// Port of Slicer.MakeItPhysical (Scripts/Slicer.cs:115-119)
+// Adds physics (gravity sim) to a sliced hull
+function makeItPhysical(piece) {
+  fallingPieces.push({
+    mesh: piece.mesh,
+    vel: new THREE.Vector3(
+      (Math.random() - 0.5) * 1.8,
+      1.5 + Math.random() * 2,
+      (Math.random() - 0.5) * 1.8
+    ),
+    rotVel: new THREE.Vector3(Math.random() * 5, Math.random() * 3, Math.random() * 5),
+    settled: false,
+  });
+}
+
+// Port of Slicer.SliceObject → EzySlice obj.Slice(position, transform.up)
+// (Scripts/Slicer.cs:124-132)
+// Since EzySlice is Unity-only, we replicate CreateUpperHull / CreateLowerHull
+// by clipping geometry above/below the knife Y plane.
+function createHull(geo, dir, insideColor) {
+  const cloned = geo.clone();
+  const pos = cloned.attributes.position;
+  for (let i = 0; i < pos.count; i++) {
+    const y = pos.getY(i);
+    if (dir > 0 && y < 0) pos.setY(i, 0);
+    else if (dir < 0 && y > 0) pos.setY(i, 0);
+  }
+  pos.needsUpdate = true;
+  cloned.computeVertexNormals();
+  return cloned;
+}
+
+// Port of Slicer.sliceObject (Scripts/Slicer.cs:55-98)
+function sliceObject(obj) {
+  if (obj.userData.sliced) return;
+  obj.userData.sliced = true;
+  playChopSound();
+  sliceCount++;
+  sliceEl.textContent = sliceCount;
+
+  const origPos = obj.position.clone();
+  const geo = obj.geometry;
+  const tag = obj.userData.tag;
+  const outsideColor = obj.material.color.getHex();
+  // Slicer.cs:8-9 — onionInside / garlicInside
+  const insideColor = obj.userData.insideColor;
+
+  // Slicer.cs:71 — Destroy(objectToBeSliced.gameObject)
+  scene.remove(obj);
+  const idx = interactables.indexOf(obj);
+  if (idx > -1) interactables.splice(idx, 1);
+
+  // Slicer.cs:59 — CreateUpperHull
+  const upperGeo = createHull(geo, 1, insideColor);
+  const upperMat = new THREE.MeshStandardMaterial({ color: outsideColor, roughness: 0.5 });
+  const upper = new THREE.Mesh(upperGeo, upperMat);
+  upper.position.copy(origPos);           // Slicer.cs:63
+  upper.castShadow = true;
+  // Slicer.cs:75-78 — tag + layer
+  upper.userData = { type: 'sliceable', tag, insideColor, sliced: false };
+  scene.add(upper);
+  interactables.push(upper);
+  makeItPhysical({ mesh: upper });        // Slicer.cs:67
+
+  // Slicer.cs:60 — CreateLowerHull
+  const lowerGeo = createHull(geo, -1, insideColor);
+  const lowerMat = new THREE.MeshStandardMaterial({ color: insideColor, roughness: 0.4 });
+  const lower = new THREE.Mesh(lowerGeo, lowerMat);
+  lower.position.copy(origPos);           // Slicer.cs:64
+  lower.castShadow = true;
+  lower.userData = { type: 'sliceable', tag, insideColor, sliced: false };
+  scene.add(lower);
+  interactables.push(lower);
+  makeItPhysical({ mesh: lower });        // Slicer.cs:68
+
+  spawnSliceParticles(origPos, outsideColor);
+}
+
+function spawnSliceParticles(pos, color) {
+  const count = 18;
+  const geo = new THREE.BufferGeometry();
+  const arr = new Float32Array(count * 3);
+  const vels = [];
+  for (let i = 0; i < count; i++) {
+    arr[i * 3] = pos.x; arr[i * 3 + 1] = pos.y; arr[i * 3 + 2] = pos.z;
+    vels.push(new THREE.Vector3((Math.random() - 0.5) * 3, Math.random() * 3 + 1, (Math.random() - 0.5) * 3));
+  }
+  geo.setAttribute('position', new THREE.BufferAttribute(arr, 3));
+  const mat = new THREE.PointsMaterial({ color, size: 0.07, transparent: true, opacity: 1 });
+  const pts = new THREE.Points(geo, mat);
+  scene.add(pts);
+  particles.push({ pts, vels, life: 1 });
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  Knife — port of Scripts/TouchControl2.cs
+//  speedModifierSide / speedModifierDown control drag speed
+//  (Scripts/TouchControl2.cs:9-10)
+//  First finger/mouse drag = move X/Y  (line 30-33)
+//  Second finger / right-drag = rotate Y  (line 48-51)
+// ════════════════════════════════════════════════════════════════════
+let knife;
+const speedModifierSide = 0.006;  // TouchControl2.cs:9
+const speedModifierDown = 0.006;  // TouchControl2.cs:10
+
+function createKnife() {
+  const group = new THREE.Group();
+  // Blade
+  const blade = new THREE.Mesh(
+    new THREE.BoxGeometry(0.04, 1.2, 0.5),
+    new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.8, roughness: 0.2 })
+  );
+  blade.position.y = 0.6;
+  blade.castShadow = true;
+  group.add(blade);
+  // Handle
+  const handle = new THREE.Mesh(
+    new THREE.BoxGeometry(0.08, 0.45, 0.12),
+    new THREE.MeshStandardMaterial({ color: 0x5c3a1e, roughness: 0.7 })
+  );
+  handle.position.y = 1.4;
+  group.add(handle);
+  group.position.set(0, 1.8, 0);
+  group.rotation.z = Math.PI;
+  scene.add(group);
+  return group;
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  Object spawning
+// ════════════════════════════════════════════════════════════════════
+function clearAll() {
+  [...interactables].forEach(o => scene.remove(o));
+  interactables.length = 0;
+  [...fallingPieces].forEach(p => scene.remove(p.mesh));
+  fallingPieces.length = 0;
+  [...particles].forEach(p => scene.remove(p.pts));
+  particles.length = 0;
+  if (knife) { scene.remove(knife); knife = null; }
+  squishData = null;
+  jellyData = null;
+}
+
+function spawnSliceMode() {
+  knife = createKnife();
+  // Slicer.cs:15-16 — onionTag = "onion", garlicTag = "garlic"
+  const onionGeo = new THREE.SphereGeometry(0.45, 28, 28);
+  const garlicGeo = new THREE.DodecahedronGeometry(0.38, 1);
+
+  const onionColor = 0xdda0dd;
+  const onionInsideColor = 0xf5e6f0;
+  const garlicColor = 0xf5f5dc;
+  const garlicInsideColor = 0xfffff0;
+
+  function makeSliceable(geo, color, insideColor, pos, tag) {
+    const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.5, metalness: 0.05 });
+    const m = new THREE.Mesh(geo, mat);
+    m.position.copy(pos); m.castShadow = true;
+    m.userData = { type: 'sliceable', tag, insideColor, sliced: false };
+    scene.add(m); interactables.push(m);
+  }
+  makeSliceable(onionGeo.clone(), onionColor, onionInsideColor, new THREE.Vector3(-1.2, 0.6, 0), 'onion');
+  makeSliceable(onionGeo.clone(), onionColor, onionInsideColor, new THREE.Vector3(0, 0.6, 0.4), 'onion');
+  makeSliceable(onionGeo.clone(), onionColor, onionInsideColor, new THREE.Vector3(0.6, 0.6, -0.5), 'onion');
+  makeSliceable(garlicGeo.clone(), garlicColor, garlicInsideColor, new THREE.Vector3(1.3, 0.55, 0.2), 'garlic');
+  makeSliceable(garlicGeo.clone(), garlicColor, garlicInsideColor, new THREE.Vector3(-0.5, 0.55, -0.4), 'garlic');
+}
+
+function spawnSquishMode() {
+  // Uses CubeSphere geometry (Scripts/CubeSphere.cs) as the stress ball
+  const geo = new THREE.SphereGeometry(1, 48, 48);
+  const mat = new THREE.MeshStandardMaterial({ color: 0xff6b9d, roughness: 0.35, metalness: 0.05 });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(0, 1.2, 0); mesh.castShadow = true;
+  mesh.userData = { type: 'squishable' };
+  scene.add(mesh); interactables.push(mesh);
+  // MeshDeformer.cs — create deformer instance
+  squishData = new MeshDeformer(mesh);
+}
+
+function spawnJellyMode() {
+  const geo = new THREE.BoxGeometry(1.4, 1.4, 1.4, 12, 12, 12);
+  const mat = new THREE.MeshPhysicalMaterial({
+    color: 0x44ddaa, roughness: 0.15, metalness: 0.05,
+    transmission: 0.35, thickness: 1.0, clearcoat: 0.5,
+  });
+  const mesh = new THREE.Mesh(geo, mat);
+  mesh.position.set(0, 0.9, 0); mesh.castShadow = true;
+  mesh.userData = { type: 'jelly' };
+  scene.add(mesh); interactables.push(mesh);
+  jellyData = new JellySystem(mesh);
+}
+
+function setMode(mode) {
+  currentMode = mode;
+  clearAll();
+  if (mode === 'slice') { spawnSliceMode(); hintEl.textContent = 'Click/tap objects to slice \u00b7 Drag background to orbit'; }
+  else if (mode === 'squish') { spawnSquishMode(); hintEl.textContent = 'Click/drag the ball to squish it \u00b7 It springs back'; }
+  else { spawnJellyMode(); hintEl.textContent = 'Click/tap the jelly to make it wobble'; }
+}
+
+// ════════════════════════════════════════════════════════════════════
+//  Input — port of MeshDeformerInput.cs + TouchControl2.cs
+// ════════════════════════════════════════════════════════════════════
+let pointerDown = false;
+let lastPointerX = 0, lastPointerY = 0;
+let rightDrag = false;
+
+function getPointer(e) {
+  const x = e.clientX ?? e.touches?.[0]?.clientX;
+  const y = e.clientY ?? e.touches?.[0]?.clientY;
+  if (x == null) return null;
+  pointer.x = (x / innerWidth) * 2 - 1;
+  pointer.y = -(y / innerHeight) * 2 + 1;
+  return { x, y };
+}
+
+function handleDown(e) {
+  ensureAudio();
+  rightDrag = (e.button === 2);
+  const p = getPointer(e);
+  if (!p) return;
+  pointerDown = true;
+  lastPointerX = p.x; lastPointerY = p.y;
+
+  if (rightDrag) return;
+
+  raycaster.setFromCamera(pointer, camera);
+  const hits = raycaster.intersectObjects(interactables);
+  if (hits.length === 0) return;
+  const hit = hits[0];
+  const obj = hit.object;
+
+  if (currentMode === 'slice' && obj.userData.type === 'sliceable') {
+    controls.enabled = false;
+    // Slicer.cs:26-28 — isTouched triggers slice
+    sliceObject(obj);
+    setTimeout(() => controls.enabled = true, 120);
+  } else if (currentMode === 'squish' && obj.userData.type === 'squishable' && squishData) {
+    controls.enabled = false;
+    // MeshDeformerInput.cs:32-37 — point + normal * forceOffset, then AddDeformingForce
+    const point = hit.point.clone().add(hit.face.normal.clone().multiplyScalar(0.1)); // forceOffset = 0.1
+    squishData.addDeformingForce(point, 10); // MeshDeformerInput.cs:8 — force = 10f
+    playSquishSound();
+    setTimeout(() => controls.enabled = true, 50);
+  } else if (currentMode === 'jelly' && jellyData) {
+    controls.enabled = false;
+    jellyData.poke(hit.point, 0.5);
+    playJellySound();
+    setTimeout(() => controls.enabled = true, 120);
+  }
+}
+
+function handleMove(e) {
+  if (!pointerDown) return;
+  const p = getPointer(e);
+  if (!p) return;
+  const dx = p.x - lastPointerX;
+  const dy = p.y - lastPointerY;
+  lastPointerX = p.x; lastPointerY = p.y;
+
+  // TouchControl2.cs:30-33 — move knife with first finger delta
+  if (currentMode === 'slice' && knife && !rightDrag) {
+    knife.position.x += dx * speedModifierSide * 80;
+    knife.position.y -= dy * speedModifierDown * 80;
+    // SliceListener.cs:9-12 — check overlap on move
+    raycaster.setFromCamera(pointer, camera);
+    const hits = raycaster.intersectObjects(interactables);
+    for (const h of hits) {
+      if (h.object.userData.type === 'sliceable' && !h.object.userData.sliced) {
+        sliceObject(h.object);
+      }
+    }
+  }
+
+  // MeshDeformerInput.cs:13-16 — continuous squish while mouse held
+  if (currentMode === 'squish' && squishData) {
+    raycaster.setFromCamera(pointer, camera);
+    const hits = raycaster.intersectObjects(interactables);
+    if (hits.length > 0 && hits[0].object.userData.type === 'squishable') {
+      const point = hits[0].point.clone().add(hits[0].face.normal.clone().multiplyScalar(0.1));
+      squishData.addDeformingForce(point, 8);
+    }
+  }
+
+  // TouchControl2.cs:48-51 — rotate knife with second finger / right-drag
+  if (currentMode === 'slice' && knife && rightDrag) {
+    knife.rotation.y += dx * speedModifierSide * 40;
+  }
+}
+
+function handleUp() { pointerDown = false; controls.enabled = true; }
+
+renderer.domElement.addEventListener('pointerdown', handleDown);
+renderer.domElement.addEventListener('pointermove', handleMove);
+renderer.domElement.addEventListener('pointerup', handleUp);
+renderer.domElement.addEventListener('contextmenu', e => e.preventDefault());
+
+// Touch support — port of TouchControl2.cs two-finger handling
+renderer.domElement.addEventListener('touchstart', e => {
+  ensureAudio();
+  if (e.touches.length === 1) handleDown(e.touches[0]);
+}, { passive: true });
+renderer.domElement.addEventListener('touchmove', e => {
+  if (e.touches.length >= 1) handleMove(e.touches[0]);
+  // TouchControl2.cs:42-55 — second finger rotates
+  if (e.touches.length > 1 && knife && currentMode === 'slice') {
+    knife.rotation.y += (e.touches[1].clientX - (lastPointerX || e.touches[1].clientX)) * speedModifierSide * 0.5;
+  }
+}, { passive: true });
+renderer.domElement.addEventListener('touchend', handleUp);
+
+// ════════════════════════════════════════════════════════════════════
+//  Mode buttons + reset
+// ════════════════════════════════════════════════════════════════════
+document.querySelectorAll('.mbtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mbtn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    setMode(btn.dataset.mode);
+  });
+});
+document.getElementById('reset-btn').addEventListener('click', () => setMode(currentMode));
+
+// ════════════════════════════════════════════════════════════════════
+//  Animation loop
+// ════════════════════════════════════════════════════════════════════
+const clock = new THREE.Clock();
+
+function animate() {
+  requestAnimationFrame(animate);
+  const dt = Math.min(clock.getDelta(), 0.05);
+  controls.update();
+
+  // Falling pieces — gravity sim (replaces Unity Rigidbody from MakeItPhysical)
+  for (const p of fallingPieces) {
+    if (p.settled) continue;
+    p.vel.y -= 9.81 * dt;
+    p.mesh.position.addScaledVector(p.vel, dt);
+    p.mesh.rotation.x += p.rotVel.x * dt;
+    p.mesh.rotation.z += p.rotVel.z * dt;
+    if (p.mesh.position.y < 0.2) {
+      p.mesh.position.y = 0.2;
+      p.vel.y = Math.abs(p.vel.y) * 0.25;
+      p.vel.multiplyScalar(0.4);
+      p.rotVel.multiplyScalar(0.4);
+      if (Math.abs(p.vel.y) < 0.08) { p.settled = true; p.vel.set(0, 0, 0); }
+    }
+  }
+
+  // MeshDeformer.Update (Scripts/MeshDeformer.cs:67-75)
+  if (squishData) squishData.update(dt);
+
+  // Jelly.FixedUpdate (Scripts/Jelly.cs:35-48)
+  if (jellyData) jellyData.update();
+
+  // Particles
+  for (let i = particles.length - 1; i >= 0; i--) {
+    const ps = particles[i];
+    ps.life -= dt * 2.2;
+    if (ps.life <= 0) { scene.remove(ps.pts); particles.splice(i, 1); continue; }
+    ps.pts.material.opacity = ps.life;
+    const pos = ps.pts.geometry.attributes.position;
+    for (let j = 0; j < ps.vels.length; j++) {
+      ps.vels[j].y -= 6 * dt;
+      pos.setX(j, pos.getX(j) + ps.vels[j].x * dt);
+      pos.setY(j, pos.getY(j) + ps.vels[j].y * dt);
+      pos.setZ(j, pos.getZ(j) + ps.vels[j].z * dt);
+    }
+    pos.needsUpdate = true;
+  }
+
+  renderer.render(scene, camera);
+}
+
+window.addEventListener('resize', () => {
+  camera.aspect = innerWidth / innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth, innerHeight);
+});
+
+setMode('slice');
+animate();
+  </script>
+</body>
+</html>
