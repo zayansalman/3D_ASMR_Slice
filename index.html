@@ -1,857 +1,853 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>3D ASMR Stress Relief Game — Web Port</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      overflow: hidden;
-      background: #1a1a2e;
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      touch-action: none;
-      -webkit-user-select: none;
-      user-select: none;
-    }
-    canvas { display: block; }
-    #ui {
-      position: fixed; top: 0; left: 0; right: 0;
-      pointer-events: none; z-index: 10;
-      display: flex; flex-direction: column; align-items: center;
-      padding: 14px;
-    }
-    #title {
-      color: #e0e0ff; font-size: 20px; font-weight: 600;
-      letter-spacing: 0.5px;
-      text-shadow: 0 2px 10px rgba(100,100,255,0.25);
-    }
-    #subtitle {
-      color: #7777aa; font-size: 12px; margin-top: 2px;
-    }
-    #hint {
-      color: #8888bb; font-size: 13px; margin-top: 6px; text-align: center;
-    }
-    #mode-bar {
-      position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%);
-      display: flex; gap: 8px; z-index: 10;
-    }
-    .mbtn {
-      padding: 9px 18px; border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 20px; background: rgba(255,255,255,0.05);
-      color: #b0b0d0; font-size: 13px; cursor: pointer;
-      transition: all 0.2s; backdrop-filter: blur(6px);
-    }
-    .mbtn:hover { background: rgba(255,255,255,0.1); }
-    .mbtn.active {
-      background: rgba(110,110,255,0.2); border-color: rgba(110,110,255,0.45);
-      color: #fff;
-    }
-    #stats {
-      position: fixed; top: 72px; right: 16px;
-      color: #9999bb; font-size: 13px; z-index: 10;
-    }
-    #reset-btn {
-      position: fixed; bottom: 56px; left: 50%; transform: translateX(-50%);
-      padding: 6px 16px; border: 1px solid rgba(255,255,255,0.1);
-      border-radius: 14px; background: rgba(255,255,255,0.04);
-      color: #8888aa; font-size: 12px; cursor: pointer; z-index: 10;
-    }
-    #reset-btn:hover { background: rgba(255,255,255,0.08); color: #bbb; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>ASMR Slice — Satisfying Stress Relief</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{overflow:hidden;background:#1a1a2e;font-family:'Segoe UI',system-ui,sans-serif;touch-action:none;-webkit-user-select:none;user-select:none;color:#e0e0ff}
+canvas{display:block}
+
+/* ── Screens ── */
+.screen{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .3s}
+.screen.hidden{opacity:0;pointer-events:none}
+
+/* Title */
+#screen-title{background:radial-gradient(ellipse at 50% 40%,#2a2a4e 0%,#1a1a2e 70%)}
+#screen-title h1{font-size:clamp(36px,8vw,56px);font-weight:800;letter-spacing:2px;background:linear-gradient(135deg,#a78bfa,#60a5fa,#34d399);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:6px}
+#screen-title .sub{color:#8888bb;font-size:14px;margin-bottom:32px}
+.btn-main{padding:14px 48px;border:none;border-radius:28px;background:linear-gradient(135deg,#7c3aed,#3b82f6);color:#fff;font-size:18px;font-weight:700;cursor:pointer;letter-spacing:1px;box-shadow:0 4px 24px rgba(124,58,237,.35);transition:transform .15s}
+.btn-main:active{transform:scale(.95)}
+#total-stars-title{margin-top:20px;color:#fbbf24;font-size:16px}
+
+/* Level Select */
+#screen-levels{background:#1a1a2e;padding:20px;overflow-y:auto}
+#screen-levels h2{font-size:22px;margin-bottom:12px}
+.world-tabs{display:flex;gap:6px;margin-bottom:16px}
+.wtab{padding:8px 20px;border:1px solid rgba(255,255,255,.1);border-radius:18px;background:rgba(255,255,255,.04);color:#aaa;font-size:13px;cursor:pointer;transition:all .2s}
+.wtab.active{background:rgba(124,58,237,.25);border-color:rgba(124,58,237,.5);color:#fff}
+.level-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;max-width:360px;width:100%}
+.lvl-btn{width:100%;aspect-ratio:1;border:2px solid rgba(255,255,255,.08);border-radius:14px;background:rgba(255,255,255,.03);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;position:relative}
+.lvl-btn:active{transform:scale(.92)}
+.lvl-btn.locked{opacity:.35;cursor:default}
+.lvl-btn.locked::after{content:'🔒';position:absolute;font-size:16px}
+.lvl-btn .lvl-num{font-size:18px;font-weight:700;color:#ddd}
+.lvl-btn.locked .lvl-num{visibility:hidden}
+.lvl-btn .lvl-stars{font-size:11px;margin-top:2px;color:#fbbf24;letter-spacing:1px}
+#btn-back{margin-top:18px;padding:8px 20px;border:1px solid rgba(255,255,255,.1);border-radius:14px;background:transparent;color:#888;font-size:13px;cursor:pointer}
+#stars-total-levels{color:#fbbf24;font-size:14px;margin-top:10px}
+#shop-btn{margin-top:10px;padding:8px 20px;border:1px solid rgba(251,191,36,.2);border-radius:14px;background:rgba(251,191,36,.06);color:#fbbf24;font-size:13px;cursor:pointer}
+
+/* HUD */
+#hud{position:fixed;top:0;left:0;right:0;z-index:15;pointer-events:none;padding:10px 16px}
+#hud.hidden{display:none}
+#hud-top{display:flex;justify-content:space-between;align-items:center}
+#hud-level{font-size:14px;color:#aab}
+#hud-score{font-size:22px;font-weight:700;color:#fff}
+#hud-combo{font-size:18px;font-weight:700;color:#fbbf24;opacity:0;transition:opacity .15s}
+#hud-combo.show{opacity:1}
+#hud-timer{font-size:16px;color:#f87171;font-weight:600}
+#sat-bar{margin-top:8px;height:6px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden}
+#sat-fill{height:100%;width:0%;background:linear-gradient(90deg,#34d399,#fbbf24,#f97316);border-radius:3px;transition:width .25s}
+#pause-btn{position:fixed;top:12px;right:12px;z-index:16;width:36px;height:36px;border:none;border-radius:50%;background:rgba(255,255,255,.08);color:#aaa;font-size:16px;cursor:pointer;pointer-events:auto}
+
+/* Level Complete */
+#screen-complete{background:rgba(10,10,25,.92);backdrop-filter:blur(8px)}
+#screen-complete h2{font-size:28px;font-weight:700;margin-bottom:16px}
+.stars-row{display:flex;gap:12px;margin-bottom:20px}
+.star-icon{font-size:42px;color:#444;transition:color .3s,transform .3s}
+.star-icon.earned{color:#fbbf24;transform:scale(1.15)}
+.score-breakdown{text-align:left;font-size:14px;color:#999;line-height:2}
+.score-breakdown span{color:#fff;font-weight:600;float:right}
+.complete-btns{display:flex;gap:10px;margin-top:20px}
+.btn-sec{padding:10px 28px;border:1px solid rgba(255,255,255,.12);border-radius:20px;background:rgba(255,255,255,.05);color:#ccc;font-size:14px;cursor:pointer}
+#ad-slot{margin-top:20px;width:300px;height:50px;border:1px dashed rgba(255,255,255,.08);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#555;font-size:11px}
+
+/* Pause / Fail */
+#screen-pause,#screen-fail{background:rgba(10,10,25,.88);backdrop-filter:blur(6px)}
+#screen-fail h2{color:#f87171}
+
+/* Shop */
+#screen-shop{background:#1a1a2e;padding:20px;overflow-y:auto}
+.shop-section{margin-bottom:24px;width:100%;max-width:360px}
+.shop-section h3{font-size:15px;color:#aab;margin-bottom:8px}
+.shop-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.shop-item{aspect-ratio:1;border:2px solid rgba(255,255,255,.08);border-radius:12px;background:rgba(255,255,255,.03);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:all .15s;font-size:11px;color:#888;gap:4px}
+.shop-item.unlocked{border-color:rgba(124,58,237,.3)}
+.shop-item.selected{border-color:#7c3aed;background:rgba(124,58,237,.12)}
+.shop-item.locked{opacity:.4;cursor:default}
+.shop-item .item-icon{font-size:24px}
+.shop-item .item-cost{color:#fbbf24;font-size:10px}
+
+/* Combo float */
+.combo-float{position:fixed;pointer-events:none;z-index:30;font-size:24px;font-weight:800;color:#fbbf24;text-shadow:0 2px 8px rgba(251,191,36,.4);animation:floatUp .8s ease-out forwards}
+@keyframes floatUp{0%{transform:translateY(0) scale(1);opacity:1}100%{transform:translateY(-70px) scale(1.2);opacity:0}}
+@keyframes starPop{0%{transform:scale(0) rotate(-20deg);opacity:0}60%{transform:scale(1.3) rotate(5deg);opacity:1}100%{transform:scale(1) rotate(0deg);opacity:1}}
+.star-icon.anim{animation:starPop .4s ease-out forwards}
+</style>
 </head>
 <body>
-  <div id="ui">
-    <div id="title">ASMR Stress Relief</div>
-    <div id="subtitle">Web port of Unity C# dissertation project by Zayan Khan</div>
-    <div id="hint"></div>
-  </div>
-  <div id="stats">Slices: <span id="slice-count">0</span></div>
-  <div id="mode-bar">
-    <button class="mbtn active" data-mode="slice">Slice</button>
-    <button class="mbtn" data-mode="squish">Squish</button>
-    <button class="mbtn" data-mode="jelly">Jelly</button>
-  </div>
-  <button id="reset-btn">Reset objects</button>
 
-  <script type="importmap">
-  { "imports": {
-      "three": "https://esm.sh/three@0.160.0",
-      "three/addons/": "https://esm.sh/three@0.160.0/examples/jsm/"
-  }}
-  </script>
-  <script type="module">
+<!-- ═══ TITLE SCREEN ═══ -->
+<div id="screen-title" class="screen">
+  <h1>ASMR SLICE</h1>
+  <div class="sub">Satisfying stress relief</div>
+  <button class="btn-main" id="btn-play">PLAY</button>
+  <div id="total-stars-title"></div>
+</div>
+
+<!-- ═══ LEVEL SELECT ═══ -->
+<div id="screen-levels" class="screen hidden">
+  <h2>Select Level</h2>
+  <div class="world-tabs" id="world-tabs"></div>
+  <div class="level-grid" id="level-grid"></div>
+  <div id="stars-total-levels"></div>
+  <button id="shop-btn">Customize</button>
+  <button id="btn-back">Back</button>
+</div>
+
+<!-- ═══ IN-GAME HUD ═══ -->
+<div id="hud" class="hidden">
+  <div id="hud-top">
+    <div id="hud-level"></div>
+    <div id="hud-score">0</div>
+    <div id="hud-combo">x2</div>
+    <div id="hud-timer"></div>
+  </div>
+  <div id="sat-bar"><div id="sat-fill"></div></div>
+</div>
+<button id="pause-btn" style="display:none">⏸</button>
+
+<!-- ═══ LEVEL COMPLETE ═══ -->
+<div id="screen-complete" class="screen hidden">
+  <h2 id="complete-title">Level Complete!</h2>
+  <div class="stars-row" id="stars-row"></div>
+  <div class="score-breakdown" id="score-breakdown"></div>
+  <div class="complete-btns">
+    <button class="btn-sec" id="btn-retry">Retry</button>
+    <button class="btn-main" id="btn-next">Next Level</button>
+  </div>
+  <div id="ad-slot">Ad space</div>
+</div>
+
+<!-- ═══ PAUSE ═══ -->
+<div id="screen-pause" class="screen hidden">
+  <h2>Paused</h2>
+  <button class="btn-main" id="btn-resume" style="margin-bottom:12px">Resume</button>
+  <button class="btn-sec" id="btn-quit">Quit to Menu</button>
+</div>
+
+<!-- ═══ FAIL ═══ -->
+<div id="screen-fail" class="screen hidden">
+  <h2>Time's Up!</h2>
+  <p style="color:#999;margin:12px 0">You needed <span id="fail-remaining">0</span> more</p>
+  <div class="complete-btns">
+    <button class="btn-sec" id="btn-fail-quit">Menu</button>
+    <button class="btn-main" id="btn-fail-retry">Retry</button>
+  </div>
+</div>
+
+<!-- ═══ SHOP ═══ -->
+<div id="screen-shop" class="screen hidden">
+  <h2>Customize</h2>
+  <div class="shop-section"><h3>Knives</h3><div class="shop-grid" id="knife-grid"></div></div>
+  <div class="shop-section"><h3>Backgrounds</h3><div class="shop-grid" id="bg-grid"></div></div>
+  <button id="btn-shop-back" class="btn-sec" style="margin-top:16px">Back</button>
+</div>
+
+<script type="importmap">
+{"imports":{"three":"https://esm.sh/three@0.160.0","three/addons/":"https://esm.sh/three@0.160.0/examples/jsm/"}}
+</script>
+<script type="module">
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-// ════════════════════════════════════════════════════════════════════
-//  Web Audio — port of chopSound.cs
-//  Original: source.PlayDelayed(0.1f) on OnTriggerEnter with
-//  "onion" or "garlic" tags  (Scripts/chopSound.cs:19-31)
-// ════════════════════════════════════════════════════════════════════
-const AudioCtx = window.AudioContext || window.webkitAudioContext;
-let audioCtx;
-function ensureAudio() {
-  if (!audioCtx) audioCtx = new AudioCtx();
-  if (audioCtx.state === 'suspended') audioCtx.resume();
+// ═══════════════════════════════════════════════════════════════
+//  AUDIO — port of Scripts/chopSound.cs
+// ═══════════════════════════════════════════════════════════════
+const AC=window.AudioContext||window.webkitAudioContext;let actx;
+function ea(){if(!actx)actx=new AC();if(actx.state==='suspended')actx.resume()}
+
+function playChop(){
+  ea();const t=actx.currentTime+0.1;
+  const b=actx.createBuffer(1,actx.sampleRate*.12,actx.sampleRate),d=b.getChannelData(0);
+  for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.exp(-i/(d.length*.12));
+  const s=actx.createBufferSource();s.buffer=b;
+  const hp=actx.createBiquadFilter();hp.type='highpass';hp.frequency.value=900;
+  const g=actx.createGain();g.gain.setValueAtTime(.45,t);g.gain.exponentialRampToValueAtTime(.001,t+.12);
+  s.connect(hp).connect(g).connect(actx.destination);s.start(t);s.stop(t+.15);
+}
+function playSquish(){
+  ea();const t=actx.currentTime;
+  const o=actx.createOscillator();o.type='sine';o.frequency.setValueAtTime(160,t);o.frequency.exponentialRampToValueAtTime(55,t+.18);
+  const g=actx.createGain();g.gain.setValueAtTime(.25,t);g.gain.exponentialRampToValueAtTime(.001,t+.22);
+  o.connect(g).connect(actx.destination);o.start(t);o.stop(t+.25);
+}
+function playJelly(){
+  ea();const t=actx.currentTime;
+  const o=actx.createOscillator();o.type='sine';o.frequency.setValueAtTime(280,t);o.frequency.exponentialRampToValueAtTime(100,t+.35);
+  const g=actx.createGain();g.gain.setValueAtTime(.12,t);g.gain.exponentialRampToValueAtTime(.001,t+.4);
+  const lfo=actx.createOscillator();lfo.frequency.value=14;const lg=actx.createGain();lg.gain.value=35;
+  lfo.connect(lg).connect(o.frequency);o.connect(g).connect(actx.destination);lfo.start(t);o.start(t);lfo.stop(t+.45);o.stop(t+.45);
+}
+function playDing(){
+  ea();const t=actx.currentTime;
+  const o=actx.createOscillator();o.type='sine';o.frequency.setValueAtTime(880,t);o.frequency.exponentialRampToValueAtTime(1200,t+.15);
+  const g=actx.createGain();g.gain.setValueAtTime(.2,t);g.gain.exponentialRampToValueAtTime(.001,t+.35);
+  o.connect(g).connect(actx.destination);o.start(t);o.stop(t+.4);
+}
+function playFail(){
+  ea();const t=actx.currentTime;
+  const o=actx.createOscillator();o.type='sawtooth';o.frequency.setValueAtTime(300,t);o.frequency.exponentialRampToValueAtTime(100,t+.4);
+  const g=actx.createGain();g.gain.setValueAtTime(.15,t);g.gain.exponentialRampToValueAtTime(.001,t+.5);
+  o.connect(g).connect(actx.destination);o.start(t);o.stop(t+.55);
 }
 
-// Synthesised chop — plays after 0.1 s delay matching PlayDelayed(0.1f)
-function playChopSound() {
-  ensureAudio();
-  const delay = 0.1; // chopSound.cs:24 — source.PlayDelayed(0.1f)
-  const now = audioCtx.currentTime + delay;
-  const buf = audioCtx.createBuffer(1, audioCtx.sampleRate * 0.12, audioCtx.sampleRate);
-  const d = buf.getChannelData(0);
-  for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.exp(-i / (d.length * 0.12));
-  const src = audioCtx.createBufferSource(); src.buffer = buf;
-  const hp = audioCtx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 900;
-  const g = audioCtx.createGain();
-  g.gain.setValueAtTime(0.45, now);
-  g.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
-  src.connect(hp).connect(g).connect(audioCtx.destination);
-  src.start(now); src.stop(now + 0.15);
-}
-
-function playSquishSound() {
-  ensureAudio();
-  const now = audioCtx.currentTime;
-  const o = audioCtx.createOscillator(); o.type = 'sine';
-  o.frequency.setValueAtTime(160, now);
-  o.frequency.exponentialRampToValueAtTime(55, now + 0.18);
-  const g = audioCtx.createGain();
-  g.gain.setValueAtTime(0.25, now);
-  g.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
-  o.connect(g).connect(audioCtx.destination);
-  o.start(now); o.stop(now + 0.25);
-}
-
-function playJellySound() {
-  ensureAudio();
-  const now = audioCtx.currentTime;
-  const o = audioCtx.createOscillator(); o.type = 'sine';
-  o.frequency.setValueAtTime(280, now);
-  o.frequency.exponentialRampToValueAtTime(100, now + 0.35);
-  const g = audioCtx.createGain();
-  g.gain.setValueAtTime(0.12, now);
-  g.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
-  const lfo = audioCtx.createOscillator(); lfo.frequency.value = 14;
-  const lg = audioCtx.createGain(); lg.gain.value = 35;
-  lfo.connect(lg).connect(o.frequency);
-  o.connect(g).connect(audioCtx.destination);
-  lfo.start(now); o.start(now); lfo.stop(now + 0.45); o.stop(now + 0.45);
-}
-
-// ════════════════════════════════════════════════════════════════════
-//  Three.js scene
-// ════════════════════════════════════════════════════════════════════
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x1a1a2e);
-scene.fog = new THREE.Fog(0x1a1a2e, 10, 22);
-
-const camera = new THREE.PerspectiveCamera(50, innerWidth / innerHeight, 0.1, 100);
-camera.position.set(0, 3.5, 7);
-
-const renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(innerWidth, innerHeight);
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+// ═══════════════════════════════════════════════════════════════
+//  THREE.JS SCENE
+// ═══════════════════════════════════════════════════════════════
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x1a1a2e);
+scene.fog=new THREE.Fog(0x1a1a2e,12,24);
+const camera=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,.1,100);
+camera.position.set(0,3.5,7);
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;
 document.body.appendChild(renderer.domElement);
+const controls=new OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true;controls.dampingFactor=.07;controls.maxPolarAngle=Math.PI/2.05;
+controls.minDistance=3;controls.maxDistance=14;
 
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true; controls.dampingFactor = 0.07;
-controls.maxPolarAngle = Math.PI / 2.05;
-controls.minDistance = 3; controls.maxDistance = 14;
+scene.add(new THREE.AmbientLight(0x6666aa,.5));
+const sun=new THREE.DirectionalLight(0xffeedd,1.2);sun.position.set(4,8,5);sun.castShadow=true;
+sun.shadow.mapSize.set(1024,1024);scene.add(sun);
+const fill=new THREE.PointLight(0x8888ff,.5,16);fill.position.set(-4,3,-3);scene.add(fill);
 
-scene.add(new THREE.AmbientLight(0x6666aa, 0.5));
-const sun = new THREE.DirectionalLight(0xffeedd, 1.2);
-sun.position.set(4, 8, 5); sun.castShadow = true;
-sun.shadow.mapSize.set(1024, 1024); scene.add(sun);
-const fillLight = new THREE.PointLight(0x8888ff, 0.5, 16);
-fillLight.position.set(-4, 3, -3);
-scene.add(fillLight);
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(24,24),new THREE.MeshStandardMaterial({color:0x22223a,roughness:.9}));
+ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;scene.add(ground);
+const board=new THREE.Mesh(new THREE.BoxGeometry(4.5,.15,3),new THREE.MeshStandardMaterial({color:0x8B6F47,roughness:.65}));
+board.position.y=.08;board.castShadow=true;board.receiveShadow=true;scene.add(board);
 
-const ground = new THREE.Mesh(
-  new THREE.PlaneGeometry(24, 24),
-  new THREE.MeshStandardMaterial({ color: 0x22223a, roughness: 0.9 })
-);
-ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
-
-const board = new THREE.Mesh(
-  new THREE.BoxGeometry(4.5, 0.15, 3),
-  new THREE.MeshStandardMaterial({ color: 0x8B6F47, roughness: 0.65 })
-);
-board.position.y = 0.08; board.castShadow = true; board.receiveShadow = true;
-scene.add(board);
-
-// ════════════════════════════════════════════════════════════════════
-//  State
-// ════════════════════════════════════════════════════════════════════
-const raycaster = new THREE.Raycaster();
-const pointer = new THREE.Vector2();
-let currentMode = 'slice';
-let sliceCount = 0;
-const sliceEl = document.getElementById('slice-count');
-const hintEl = document.getElementById('hint');
-
-const interactables = [];
-const fallingPieces = [];
-const particles = [];
-
-// Squish state (one object at a time)
-let squishData = null;
-// Jelly state
-let jellyData = null;
-
-// ════════════════════════════════════════════════════════════════════
-//  CubeSphere procedural geometry
-//  Port of Scripts/CubeSphere.cs:127-140 — SetVertex
-//  Uses the analytic cube-to-sphere mapping:
-//    s.x = v.x * sqrt(1 - y²/2 - z²/2 + y²z²/3)
-// ════════════════════════════════════════════════════════════════════
-function createCubeSphereGeometry(gridSize, radius) {
-  // CubeSphere.cs:125 — public float radius = 1f;
-  const r = radius || 1;
-  const positions = [];
-  const normals = [];
-
-  function setVertex(x, y, z) {
-    // CubeSphere.cs:129 — Vector3 v = new Vector3(x,y,z) * 2f / gridSize - Vector3.one
-    const vx = x * 2 / gridSize - 1;
-    const vy = y * 2 / gridSize - 1;
-    const vz = z * 2 / gridSize - 1;
-    // CubeSphere.cs:130-132
-    const x2 = vx * vx, y2 = vy * vy, z2 = vz * vz;
-    // CubeSphere.cs:134-136 — the cube-sphere mapping
-    const sx = vx * Math.sqrt(Math.max(0, 1 - y2 / 2 - z2 / 2 + y2 * z2 / 3));
-    const sy = vy * Math.sqrt(Math.max(0, 1 - x2 / 2 - z2 / 2 + x2 * z2 / 3));
-    const sz = vz * Math.sqrt(Math.max(0, 1 - x2 / 2 - y2 / 2 + x2 * y2 / 3));
-    normals.push(sx, sy, sz);
-    // CubeSphere.cs:138 — vertices[i] = normals[i] * radius
-    positions.push(sx * r, sy * r, sz * r);
+// ═══════════════════════════════════════════════════════════════
+//  PHYSICS: MeshDeformer — port of Scripts/MeshDeformer.cs
+//  springForce=20 (line 17), damping=5 (line 19)
+// ═══════════════════════════════════════════════════════════════
+class MeshDeformer{
+  constructor(mesh){
+    this.mesh=mesh;const pos=mesh.geometry.attributes.position;const c=pos.count;
+    this.orig=new Float32Array(pos.array);this.disp=new Float32Array(pos.array);
+    this.vel=new Float32Array(c*3);this.sf=20;this.damp=5;
   }
-
-  const g = gridSize;
-  // CubeSphere uses the same ring-walk vertex layout as RoundedCube
-  // CubeSphere.cs:67-95 — ring walk for sides
-  for (let y = 0; y <= g; y++) {
-    for (let x = 0; x <= g; x++) setVertex(x, y, 0);
-    for (let z = 1; z <= g; z++) setVertex(g, y, z);
-    for (let x = g - 1; x >= 0; x--) setVertex(x, y, g);
-    for (let z = g - 1; z > 0; z--) setVertex(0, y, z);
+  addForce(wp,force){
+    const lp=this.mesh.worldToLocal(wp.clone());const n=this.disp.length/3;
+    for(let i=0;i<n;i++)this._fv(i,lp,force);
   }
-  // CubeSphere.cs:97-114 — top and bottom caps
-  for (let z = 1; z < g; z++) for (let x = 1; x < g; x++) setVertex(x, g, z);
-  for (let z = 1; z < g; z++) for (let x = 1; x < g; x++) setVertex(x, 0, z);
-
-  const ring = (g + g) * 2;
-  const indices = [];
-  // CubeSphere.cs:269-277 — SetQuad
-  function setQuad(v00, v10, v01, v11) {
-    indices.push(v00, v01, v10, v10, v01, v11);
+  _fv(i,pt,force){
+    const ix=i*3,iy=ix+1,iz=ix+2;
+    const px=this.disp[ix]-pt.x,py=this.disp[iy]-pt.y,pz=this.disp[iz]-pt.z;
+    const sq=px*px+py*py+pz*pz;const af=force/(1+sq);const dt=this._dt||.016;const v=af*dt;
+    const m=Math.sqrt(sq)||1;
+    this.vel[ix]+=(px/m)*v;this.vel[iy]+=(py/m)*v;this.vel[iz]+=(pz/m)*v;
   }
-
-  // CubeSphere.cs:156-175 — side quads
-  let v = 0;
-  for (let y = 0; y < g; y++, v++) {
-    for (let q = 0; q < g; q++, v++) setQuad(v, v + 1, v + ring, v + ring + 1);
-    for (let q = 0; q < g; q++, v++) setQuad(v, v + 1, v + ring, v + ring + 1);
-    for (let q = 0; q < g; q++, v++) setQuad(v, v + 1, v + ring, v + ring + 1);
-    for (let q = 0; q < g - 1; q++, v++) setQuad(v, v + 1, v + ring, v + ring + 1);
-    setQuad(v, v - ring + 1, v + ring, v + 1);
-  }
-
-  // Top/bottom faces use BufferGeometry from the sphere for simplicity
-  // (the vertex layout matches CubeSphere but the top/bottom indexing is complex)
-
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-  geo.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
-  geo.setIndex(indices);
-  geo.computeVertexNormals();
-  return geo;
-}
-
-// ════════════════════════════════════════════════════════════════════
-//  MeshDeformer — port of Scripts/MeshDeformer.cs
-//  springForce = 20f  (line 17)
-//  damping = 5f       (line 19)
-// ════════════════════════════════════════════════════════════════════
-class MeshDeformer {
-  constructor(mesh) {
-    this.mesh = mesh;
-    const pos = mesh.geometry.attributes.position;
-    const count = pos.count;
-    // MeshDeformer.cs:26-34 — copy original vertices, init velocities
-    this.originalVertices = new Float32Array(pos.array);
-    this.displacedVertices = new Float32Array(pos.array);
-    this.vertexVelocities = new Float32Array(count * 3);
-    // MeshDeformer.cs:17-19
-    this.springForce = 20;
-    this.damping = 5;
-  }
-
-  // Port of MeshDeformer.AddDeformingForce (Scripts/MeshDeformer.cs:39-50)
-  // force = 10f, forceOffset = 0.1f from MeshDeformerInput.cs:8-9
-  addDeformingForce(worldPoint, force) {
-    // MeshDeformer.cs:42 — point = transform.InverseTransformPoint(point)
-    const localPt = this.mesh.worldToLocal(worldPoint.clone());
-    const count = this.displacedVertices.length / 3;
-    for (let i = 0; i < count; i++) {
-      this.addForceToVertex(i, localPt, force);
+  update(dt){
+    this._dt=dt;const n=this.disp.length/3;
+    for(let i=0;i<n;i++){
+      const ix=i*3,iy=ix+1,iz=ix+2;
+      let vx=this.vel[ix],vy=this.vel[iy],vz=this.vel[iz];
+      const dx=this.disp[ix]-this.orig[ix],dy=this.disp[iy]-this.orig[iy],dz=this.disp[iz]-this.orig[iz];
+      vx-=dx*this.sf*dt;vy-=dy*this.sf*dt;vz-=dz*this.sf*dt;
+      const df=Math.max(0,Math.min(1,1-this.damp*dt));
+      vx*=df;vy*=df;vz*=df;
+      this.vel[ix]=vx;this.vel[iy]=vy;this.vel[iz]=vz;
+      this.disp[ix]+=vx*dt;this.disp[iy]+=vy*dt;this.disp[iz]+=vz*dt;
     }
-  }
-
-  // Port of MeshDeformer.AddForceToVertex (Scripts/MeshDeformer.cs:55-64)
-  addForceToVertex(i, point, force) {
-    const ix = i * 3, iy = ix + 1, iz = ix + 2;
-    // MeshDeformer.cs:57 — pointToVertex = displacedVertices[i] - point
-    const pvx = this.displacedVertices[ix] - point.x;
-    const pvy = this.displacedVertices[iy] - point.y;
-    const pvz = this.displacedVertices[iz] - point.z;
-    // MeshDeformer.cs:59 — attenuatedForce = force / (1f + pointToVertex.sqrMagnitude)
-    const sqrMag = pvx * pvx + pvy * pvy + pvz * pvz;
-    const attenuatedForce = force / (1 + sqrMag);
-    // MeshDeformer.cs:61 — velocity = attenuatedForce * Time.deltaTime
-    const dt = this._dt || 0.016;
-    const vel = attenuatedForce * dt;
-    // MeshDeformer.cs:63 — vertexVelocities[i] += pointToVertex.normalized * velocity
-    const mag = Math.sqrt(sqrMag) || 1;
-    this.vertexVelocities[ix] += (pvx / mag) * vel;
-    this.vertexVelocities[iy] += (pvy / mag) * vel;
-    this.vertexVelocities[iz] += (pvz / mag) * vel;
-  }
-
-  // Port of MeshDeformer.Update + UpdateVertex + SpringStep
-  // (Scripts/MeshDeformer.cs:67-91)
-  update(dt) {
-    this._dt = dt;
-    const count = this.displacedVertices.length / 3;
-    for (let i = 0; i < count; i++) {
-      this.updateVertex(i, dt);
-    }
-    // MeshDeformer.cs:73-74
-    this.mesh.geometry.attributes.position.array.set(this.displacedVertices);
-    this.mesh.geometry.attributes.position.needsUpdate = true;
+    this.mesh.geometry.attributes.position.array.set(this.disp);
+    this.mesh.geometry.attributes.position.needsUpdate=true;
     this.mesh.geometry.computeVertexNormals();
   }
-
-  // Port of MeshDeformer.UpdateVertex (Scripts/MeshDeformer.cs:77-84)
-  updateVertex(i, dt) {
-    const ix = i * 3, iy = ix + 1, iz = ix + 2;
-    // MeshDeformer.cs:79-80
-    let vx = this.vertexVelocities[ix];
-    let vy = this.vertexVelocities[iy];
-    let vz = this.vertexVelocities[iz];
-    const dx = this.displacedVertices[ix] - this.originalVertices[ix];
-    const dy = this.displacedVertices[iy] - this.originalVertices[iy];
-    const dz = this.displacedVertices[iz] - this.originalVertices[iz];
-
-    // MeshDeformer.SpringStep (Scripts/MeshDeformer.cs:87-91)
-    // velocity -= displacement * springForce * deltaTime
-    vx -= dx * this.springForce * dt;
-    vy -= dy * this.springForce * dt;
-    vz -= dz * this.springForce * dt;
-    // velocity *= Clamp01(1 - damping * deltaTime)
-    const dampFactor = Math.max(0, Math.min(1, 1 - this.damping * dt));
-    vx *= dampFactor;
-    vy *= dampFactor;
-    vz *= dampFactor;
-
-    this.vertexVelocities[ix] = vx;
-    this.vertexVelocities[iy] = vy;
-    this.vertexVelocities[iz] = vz;
-    // MeshDeformer.cs:83 — displacedVertices[i] += velocity * Time.deltaTime
-    this.displacedVertices[ix] += vx * dt;
-    this.displacedVertices[iy] += vy * dt;
-    this.displacedVertices[iz] += vz * dt;
-  }
 }
 
-// ════════════════════════════════════════════════════════════════════
-//  Jelly — port of Scripts/Jelly.cs
-//  intensity = 1f   (line 8)
-//  mass = 1f        (line 9)
-//  stifness = 1f    (line 10)  [sic — original typo preserved]
-//  damping = 0.75f  (line 11)
-// ════════════════════════════════════════════════════════════════════
-
-// Port of Jelly.JellyVertex (Scripts/Jelly.cs:50-68)
-class JellyVertex {
-  constructor(id, pos) {
-    this.ID = id;                          // Jelly.cs:52
-    this.position = pos.clone();           // Jelly.cs:53
-    this.velocity = new THREE.Vector3();   // Jelly.cs:53
-    this.force = new THREE.Vector3();      // Jelly.cs:53
-  }
-
-  // Port of JellyVertex.Shake (Scripts/Jelly.cs:61-68)
-  Shake(target, m, s, d) {
-    // Jelly.cs:63 — force = (target - position) * s
+// ═══════════════════════════════════════════════════════════════
+//  PHYSICS: Jelly — port of Scripts/Jelly.cs
+//  intensity=1 (line 8), mass=1 (line 9), stifness=1 (line 10), damping=0.75 (line 11)
+// ═══════════════════════════════════════════════════════════════
+class JellyVertex{
+  constructor(id,pos){this.ID=id;this.position=pos.clone();this.velocity=new THREE.Vector3();this.force=new THREE.Vector3()}
+  Shake(target,m,s,d){
     this.force.copy(target).sub(this.position).multiplyScalar(s);
-    // Jelly.cs:64 — velocity = (velocity + force / m) * d
     this.velocity.add(this.force.clone().divideScalar(m)).multiplyScalar(d);
-    // Jelly.cs:65 — position += velocity
     this.position.add(this.velocity);
-    // Jelly.cs:66-67 — settle threshold
-    const check = this.velocity.clone().add(this.force).add(this.force.clone().divideScalar(m));
-    if (check.length() < 0.001) this.position.copy(target);
+    if(this.velocity.clone().add(this.force).add(this.force.clone().divideScalar(m)).length()<.001)this.position.copy(target);
   }
 }
-
-class JellySystem {
-  constructor(mesh) {
-    this.mesh = mesh;
-    this.intensity = 1;       // Jelly.cs:8
-    this.mass = 1;            // Jelly.cs:9
-    this.stifness = 1;        // Jelly.cs:10  [sic]
-    this.damping = 0.75;      // Jelly.cs:11
-
-    const geo = mesh.geometry;
-    const pos = geo.attributes.position;
-    // Jelly.cs:21 — originalMesh = sharedMesh
-    this.originalVertices = new Float32Array(pos.array);
-    // Jelly.cs:26-28 — init JellyVertex array
-    this.jellyVertex = [];
-    for (let i = 0; i < pos.count; i++) {
-      const wp = new THREE.Vector3(pos.getX(i), pos.getY(i), pos.getZ(i));
-      mesh.localToWorld(wp); // Jelly.cs:28 — transform.TransformPoint
-      this.jellyVertex.push(new JellyVertex(i, wp));
+class JellySystem{
+  constructor(mesh){
+    this.mesh=mesh;this.intensity=1;this.mass=1;this.stifness=1;this.damping=.75;
+    const pos=mesh.geometry.attributes.position;this.orig=new Float32Array(pos.array);
+    this.jv=[];
+    for(let i=0;i<pos.count;i++){
+      const wp=new THREE.Vector3(pos.getX(i),pos.getY(i),pos.getZ(i));mesh.localToWorld(wp);
+      this.jv.push(new JellyVertex(i,wp));
     }
   }
+  poke(wp,str){
+    for(const j of this.jv){const d=j.position.distanceTo(wp);const k=str/(1+d*d*4);
+      j.velocity.add(j.position.clone().sub(wp).normalize().multiplyScalar(k));}
+  }
+  update(){
+    const pos=this.mesh.geometry.attributes.position;
+    for(let i=0;i<this.jv.length;i++){
+      const j=this.jv[i];const ox=this.orig[j.ID*3],oy=this.orig[j.ID*3+1],oz=this.orig[j.ID*3+2];
+      const t=new THREE.Vector3(ox,oy,oz);this.mesh.localToWorld(t);
+      j.Shake(t,this.mass,this.stifness,this.damping);
+      const l=this.mesh.worldToLocal(j.position.clone());
+      pos.setXYZ(j.ID,ox+(l.x-ox)*this.intensity,oy+(l.y-oy)*this.intensity,oz+(l.z-oz)*this.intensity);
+    }
+    pos.needsUpdate=true;this.mesh.geometry.computeVertexNormals();
+  }
+}
 
-  // Trigger a poke — gives each vertex a velocity kick
-  poke(worldPoint, strength) {
-    for (const jv of this.jellyVertex) {
-      const dist = jv.position.distanceTo(worldPoint);
-      const kick = strength / (1 + dist * dist * 4);
-      const dir = jv.position.clone().sub(worldPoint).normalize();
-      jv.velocity.add(dir.multiplyScalar(kick));
+// ═══════════════════════════════════════════════════════════════
+//  LEVEL DEFINITIONS — 30 levels across 3 worlds
+// ═══════════════════════════════════════════════════════════════
+const OBJ={
+  onion:{geo:()=>new THREE.SphereGeometry(.45,24,24),color:0xdda0dd,inside:0xf5e6f0,tag:'onion'},
+  garlic:{geo:()=>new THREE.DodecahedronGeometry(.38,1),color:0xf5f5dc,inside:0xfffff0,tag:'garlic'},
+  carrot:{geo:()=>new THREE.CylinderGeometry(.08,.15,.7,12),color:0xff8c42,inside:0xffb380,tag:'carrot'},
+  watermelon:{geo:()=>new THREE.SphereGeometry(.65,24,24),color:0x4a7c4b,inside:0xe74c4c,tag:'watermelon'},
+  cucumber:{geo:()=>new THREE.CylinderGeometry(.12,.12,.8,12),color:0x5b8c3e,inside:0xb5d89a,tag:'cucumber'},
+};
+const SQCOL=[0xff6b9d,0x60a5fa,0x34d399,0xfbbf24,0xc084fc];
+const JLCOL=[0x44ddaa,0x60a5fa,0xf472b6,0xfbbf24,0xa78bfa];
+
+const LEVELS=[
+  // World 1: Slice (1-10)
+  {id:1,world:'slice',title:'First Cut',target:3,time:null,objs:[{t:'onion',n:3}],stars:[300,450,600]},
+  {id:2,world:'slice',title:'Quick Chop',target:5,time:30,objs:[{t:'onion',n:5}],stars:[500,800,1200]},
+  {id:3,world:'slice',title:'Mixed Bowl',target:5,time:null,objs:[{t:'onion',n:3},{t:'garlic',n:2}],stars:[500,750,1000]},
+  {id:4,world:'slice',title:'Speed Slicer',target:8,time:25,objs:[{t:'onion',n:5},{t:'garlic',n:3}],stars:[800,1300,1800]},
+  {id:5,world:'slice',title:'Combo Chef',target:6,time:null,objs:[{t:'onion',n:4},{t:'garlic',n:2}],stars:[600,1000,1500]},
+  {id:6,world:'slice',title:'Carrot Crunch',target:7,time:30,objs:[{t:'carrot',n:4},{t:'onion',n:3}],stars:[700,1100,1600]},
+  {id:7,world:'slice',title:'Melon Madness',target:6,time:30,objs:[{t:'watermelon',n:2},{t:'onion',n:4}],stars:[600,1000,1500]},
+  {id:8,world:'slice',title:'Cucumber Cool',target:6,time:null,objs:[{t:'cucumber',n:3},{t:'garlic',n:3}],stars:[600,950,1400]},
+  {id:9,world:'slice',title:'Veggie Rush',target:12,time:22,objs:[{t:'onion',n:4},{t:'garlic',n:3},{t:'carrot',n:3},{t:'cucumber',n:2}],stars:[1200,2000,3000]},
+  {id:10,world:'slice',title:'Master Chef',target:15,time:30,objs:[{t:'onion',n:4},{t:'garlic',n:3},{t:'carrot',n:3},{t:'watermelon',n:2},{t:'cucumber',n:3}],stars:[1500,2800,4200]},
+  // World 2: Squish (11-20)
+  {id:11,world:'squish',title:'First Squeeze',target:5,time:null,objs:[{n:1,s:1,c:0}],stars:[250,400,600]},
+  {id:12,world:'squish',title:'Double Trouble',target:10,time:null,objs:[{n:2,s:1,c:0}],stars:[500,800,1200]},
+  {id:13,world:'squish',title:'Speed Squish',target:10,time:15,objs:[{n:1,s:1,c:0}],stars:[500,900,1400]},
+  {id:14,world:'squish',title:'Rainbow Balls',target:12,time:null,objs:[{n:3,s:1,c:-1}],stars:[600,1000,1500]},
+  {id:15,world:'squish',title:'Combo Squeeze',target:10,time:null,objs:[{n:2,s:1,c:0}],stars:[500,1000,1600]},
+  {id:16,world:'squish',title:'Tiny Targets',target:12,time:20,objs:[{n:4,s:.6,c:-1}],stars:[600,1100,1700]},
+  {id:17,world:'squish',title:'Rapid Fire',target:15,time:15,objs:[{n:2,s:1,c:0}],stars:[750,1400,2100]},
+  {id:18,world:'squish',title:'Big & Small',target:14,time:20,objs:[{n:2,s:1.3,c:1},{n:3,s:.5,c:2}],stars:[700,1300,2000]},
+  {id:19,world:'squish',title:'Multi-Ball',target:18,time:25,objs:[{n:5,s:.8,c:-1}],stars:[900,1700,2600]},
+  {id:20,world:'squish',title:'Squish Master',target:25,time:30,objs:[{n:4,s:1,c:-1}],stars:[1250,2400,3600]},
+  // World 3: Jelly (21-30)
+  {id:21,world:'jelly',title:'First Wobble',target:5,time:null,objs:[{n:1,s:1,c:0}],stars:[150,250,400]},
+  {id:22,world:'jelly',title:'Double Jelly',target:8,time:null,objs:[{n:2,s:1,c:0}],stars:[240,400,640]},
+  {id:23,world:'jelly',title:'Speed Wobble',target:10,time:15,objs:[{n:1,s:1,c:0}],stars:[300,600,1000]},
+  {id:24,world:'jelly',title:'Triple Treat',target:12,time:null,objs:[{n:3,s:1,c:-1}],stars:[360,650,1000]},
+  {id:25,world:'jelly',title:'Combo Wobble',target:10,time:null,objs:[{n:2,s:1,c:0}],stars:[300,600,1000]},
+  {id:26,world:'jelly',title:'Mini Jellies',target:15,time:20,objs:[{n:5,s:.6,c:-1}],stars:[450,900,1400]},
+  {id:27,world:'jelly',title:'Jelly Rush',target:15,time:12,objs:[{n:2,s:1,c:0}],stars:[450,1000,1600]},
+  {id:28,world:'jelly',title:'Rainbow Jelly',target:18,time:25,objs:[{n:4,s:1,c:-1}],stars:[540,1100,1700]},
+  {id:29,world:'jelly',title:'Mega Wobble',target:20,time:20,objs:[{n:3,s:1.3,c:-1}],stars:[600,1200,1900]},
+  {id:30,world:'jelly',title:'Jelly Master',target:25,time:25,objs:[{n:5,s:1,c:-1}],stars:[750,1500,2400]},
+];
+
+// ═══════════════════════════════════════════════════════════════
+//  UNLOCKABLES
+// ═══════════════════════════════════════════════════════════════
+const KNIVES=[
+  {id:'default',name:'Classic',cost:0,icon:'🔪'},
+  {id:'cleaver',name:'Cleaver',cost:10,icon:'🪓'},
+  {id:'katana',name:'Katana',cost:25,icon:'⚔️'},
+  {id:'laser',name:'Laser',cost:45,icon:'⚡'},
+];
+const BACKGROUNDS=[
+  {id:'default',name:'Midnight',cost:0,color:0x1a1a2e,icon:'🌙'},
+  {id:'night',name:'Deep Space',cost:15,color:0x0a0a1a,icon:'✨'},
+  {id:'sunset',name:'Sunset',cost:30,color:0x2d1b3d,icon:'🌅'},
+  {id:'ocean',name:'Ocean',cost:50,color:0x0d2137,icon:'🌊'},
+];
+
+// ═══════════════════════════════════════════════════════════════
+//  PERSISTENCE (localStorage)
+// ═══════════════════════════════════════════════════════════════
+const SAVE_KEY='asmr_slice_save';
+let save={stars:{},scores:{},knife:'default',bg:'default'};
+function loadSave(){try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s)save=s}catch(e){}}
+function writeSave(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(save))}catch(e){}}
+function totalStars(){let s=0;for(const k in save.stars)s+=save.stars[k];return s}
+function isUnlocked(lvl){return lvl===1||save.stars[lvl-1]>=1}
+loadSave();
+
+// ═══════════════════════════════════════════════════════════════
+//  GAME STATE
+// ═══════════════════════════════════════════════════════════════
+let state='title'; // title|levels|playing|complete|paused|fail|shop
+let curLevel=null,curLevelDef=null;
+let actionsDone=0,score=0,baseScore=0,comboBonus=0,timeBonus=0;
+let combo=0,lastActionTime=0;
+let timer=0,timerActive=false;
+let timeScale=1;
+const raycaster=new THREE.Raycaster(),pointer=new THREE.Vector2();
+const interactables=[],fallingPieces=[],particles=[];
+let knife=null;
+const deformers=[],jellies=[];
+
+// Screen shake
+let shakeAmt=0;const shakeCamBase=new THREE.Vector3();
+
+// ═══════════════════════════════════════════════════════════════
+//  SCORING & COMBOS
+// ═══════════════════════════════════════════════════════════════
+const BASE_SLICE=100,BASE_SQUISH=50,BASE_POKE=30;
+const COMBO_WINDOW=1.5;
+
+function registerAction(type,screenX,screenY){
+  const now=performance.now()/1000;
+  const base=type==='slice'?BASE_SLICE:type==='squish'?BASE_SQUISH:BASE_POKE;
+  if(now-lastActionTime<COMBO_WINDOW){combo++}else{combo=1}
+  lastActionTime=now;
+  const pts=base*combo;
+  score+=pts;baseScore+=base;comboBonus+=(pts-base);
+  actionsDone++;
+
+  // HUD updates
+  document.getElementById('hud-score').textContent=score;
+  const ce=document.getElementById('hud-combo');
+  if(combo>1){ce.textContent='x'+combo;ce.classList.add('show')}else{ce.classList.remove('show')}
+  const pct=Math.min(100,actionsDone/curLevelDef.target*100);
+  document.getElementById('sat-fill').style.width=pct+'%';
+
+  showComboFloat('+'+pts+(combo>1?' x'+combo:''),screenX||innerWidth/2,screenY||innerHeight/3);
+  if(navigator.vibrate)navigator.vibrate(combo>3?[30,20,30]:30);
+  shakeAmt=Math.min(.15,combo*.03);
+
+  if(actionsDone>=curLevelDef.target)completeLevel();
+}
+
+function showComboFloat(text,x,y){
+  const el=document.createElement('div');el.className='combo-float';el.textContent=text;
+  el.style.left=x+'px';el.style.top=y+'px';document.body.appendChild(el);
+  setTimeout(()=>el.remove(),800);
+}
+
+function completeLevel(){
+  if(state!=='playing')return;
+  timerActive=false;
+  if(curLevelDef.time)timeBonus=Math.round(timer)*10;
+  score+=timeBonus;
+
+  // Slow-mo on completion
+  timeScale=.2;setTimeout(()=>{timeScale=1;showComplete()},400);
+}
+
+function showComplete(){
+  state='complete';
+  const st=curLevelDef.stars;
+  const earned=score>=st[2]?3:score>=st[1]?2:score>=st[0]?1:0;
+  const prev=save.stars[curLevel]||0;
+  if(earned>prev)save.stars[curLevel]=earned;
+  if(!save.scores[curLevel]||score>save.scores[curLevel])save.scores[curLevel]=score;
+  writeSave();
+
+  document.getElementById('complete-title').textContent=
+    earned===3?'Perfect!':earned===2?'Great Job!':'Level Complete!';
+  const sr=document.getElementById('stars-row');sr.innerHTML='';
+  for(let i=0;i<3;i++){
+    const s=document.createElement('span');s.className='star-icon'+(i<earned?' earned':'');
+    s.textContent=i<earned?'★':'☆';sr.appendChild(s);
+    if(i<earned)setTimeout(()=>{s.classList.add('anim');playDing()},300+i*350);
+  }
+  const bd=document.getElementById('score-breakdown');
+  bd.innerHTML=`<div>Base <span>${baseScore}</span></div>`+
+    `<div>Combo bonus <span>${comboBonus}</span></div>`+
+    (timeBonus?`<div>Time bonus <span>${timeBonus}</span></div>`:'')+
+    `<div style="margin-top:6px;font-size:16px;color:#fff">Total <span>${score}</span></div>`;
+  const nb=document.getElementById('btn-next');
+  nb.style.display=curLevel<30?'':'none';
+  showScreen('screen-complete');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  UI MANAGEMENT
+// ═══════════════════════════════════════════════════════════════
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+  if(id)document.getElementById(id).classList.remove('hidden');
+  const hud=document.getElementById('hud');
+  const pb=document.getElementById('pause-btn');
+  if(id===null&&state==='playing'){hud.classList.remove('hidden');pb.style.display=''}
+  else{hud.classList.add('hidden');pb.style.display='none'}
+}
+
+function updateStarDisplays(){
+  const t=totalStars();
+  document.getElementById('total-stars-title').textContent='★ '+t+' / 90';
+  document.getElementById('stars-total-levels').textContent='★ '+t+' / 90';
+}
+
+function buildLevelSelect(world){
+  const grid=document.getElementById('level-grid');grid.innerHTML='';
+  const wLevels=LEVELS.filter(l=>l.world===world);
+  for(const lv of wLevels){
+    const btn=document.createElement('div');
+    const unlocked=isUnlocked(lv.id);
+    btn.className='lvl-btn'+(unlocked?'':' locked');
+    const earned=save.stars[lv.id]||0;
+    btn.innerHTML=`<div class="lvl-num">${lv.id}</div><div class="lvl-stars">${'★'.repeat(earned)+'☆'.repeat(3-earned)}</div>`;
+    if(unlocked)btn.addEventListener('click',()=>startLevel(lv.id));
+    grid.appendChild(btn);
+  }
+}
+
+function buildWorldTabs(){
+  const cont=document.getElementById('world-tabs');cont.innerHTML='';
+  for(const w of [{id:'slice',name:'Slice'},{id:'squish',name:'Squish'},{id:'jelly',name:'Jelly'}]){
+    const b=document.createElement('button');b.className='wtab'+(w.id==='slice'?' active':'');
+    b.textContent=w.name;b.dataset.world=w.id;
+    b.addEventListener('click',()=>{
+      cont.querySelectorAll('.wtab').forEach(t=>t.classList.remove('active'));
+      b.classList.add('active');buildLevelSelect(w.id);
+    });
+    cont.appendChild(b);
+  }
+}
+
+function buildShop(){
+  const kg=document.getElementById('knife-grid');kg.innerHTML='';
+  const ts=totalStars();
+  for(const k of KNIVES){
+    const d=document.createElement('div');
+    const unlocked=ts>=k.cost;
+    d.className='shop-item'+(unlocked?' unlocked':'  locked')+(save.knife===k.id?' selected':'');
+    d.innerHTML=`<div class="item-icon">${k.icon}</div><div>${k.name}</div>`+(k.cost?`<div class="item-cost">★${k.cost}</div>`:'');
+    if(unlocked)d.addEventListener('click',()=>{save.knife=k.id;writeSave();buildShop()});
+    kg.appendChild(d);
+  }
+  const bg=document.getElementById('bg-grid');bg.innerHTML='';
+  for(const b of BACKGROUNDS){
+    const d=document.createElement('div');
+    const unlocked=ts>=b.cost;
+    d.className='shop-item'+(unlocked?' unlocked':' locked')+(save.bg===b.id?' selected':'');
+    d.innerHTML=`<div class="item-icon">${b.icon}</div><div>${b.name}</div>`+(b.cost?`<div class="item-cost">★${b.cost}</div>`:'');
+    if(unlocked)d.addEventListener('click',()=>{save.bg=b.id;applyBg();writeSave();buildShop()});
+    bg.appendChild(d);
+  }
+}
+
+function applyBg(){
+  const bg=BACKGROUNDS.find(b=>b.id===save.bg)||BACKGROUNDS[0];
+  scene.background.set(bg.color);scene.fog.color.set(bg.color);ground.material.color.set(bg.color);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  OBJECT SPAWNING
+// ═══════════════════════════════════════════════════════════════
+function clearScene(){
+  [...interactables].forEach(o=>scene.remove(o));interactables.length=0;
+  [...fallingPieces].forEach(p=>scene.remove(p.mesh));fallingPieces.length=0;
+  [...particles].forEach(p=>scene.remove(p.pts));particles.length=0;
+  if(knife){scene.remove(knife);knife=null}
+  deformers.length=0;jellies.length=0;
+}
+
+function randomBoardPos(i,total){
+  const cols=Math.min(total,5);const row=Math.floor(i/cols);const col=i%cols;
+  const sx=-1.5+(col/(cols-1||1))*3;const sz=-0.8+(row*0.9);
+  return new THREE.Vector3(sx+(Math.random()-.5)*.3,.5+Math.random()*.15,sz+(Math.random()-.5)*.2);
+}
+
+function spawnSliceObjs(lvl){
+  let idx=0,total=0;for(const o of lvl.objs)total+=o.n;
+  for(const o of lvl.objs){
+    const def=OBJ[o.t];
+    for(let i=0;i<o.n;i++){
+      const geo=def.geo();
+      const mat=new THREE.MeshStandardMaterial({color:def.color,roughness:.5,metalness:.05});
+      const mesh=new THREE.Mesh(geo,mat);mesh.position.copy(randomBoardPos(idx,total));
+      mesh.castShadow=true;
+      mesh.userData={type:'sliceable',tag:def.tag,insideColor:def.inside,sliced:false};
+      scene.add(mesh);interactables.push(mesh);idx++;
     }
   }
-
-  // Port of Jelly.FixedUpdate (Scripts/Jelly.cs:35-48)
-  update() {
-    const pos = this.mesh.geometry.attributes.position;
-    for (let i = 0; i < this.jellyVertex.length; i++) {
-      const jv = this.jellyVertex[i];
-      // Jelly.cs:40 — target = transform.TransformPoint(vertexArray[jv.ID])
-      const ox = this.originalVertices[jv.ID * 3];
-      const oy = this.originalVertices[jv.ID * 3 + 1];
-      const oz = this.originalVertices[jv.ID * 3 + 2];
-      const target = new THREE.Vector3(ox, oy, oz);
-      this.mesh.localToWorld(target);
-
-      // Jelly.cs:42 — jellyVertex[i].Shake(target, mass, stifness, damping)
-      jv.Shake(target, this.mass, this.stifness, this.damping);
-
-      // Jelly.cs:43 — target = transform.InverseTransformPoint(jv.position)
-      const local = this.mesh.worldToLocal(jv.position.clone());
-
-      // Jelly.cs:44 — vertexArray[jv.ID] = Lerp(original, target, intensity)
-      const lx = ox + (local.x - ox) * this.intensity;
-      const ly = oy + (local.y - oy) * this.intensity;
-      const lz = oz + (local.z - oz) * this.intensity;
-      pos.setXYZ(jv.ID, lx, ly, lz);
-    }
-    pos.needsUpdate = true;
-    this.mesh.geometry.computeVertexNormals();
-  }
 }
 
-// ════════════════════════════════════════════════════════════════════
-//  Slicer — port of Scripts/Slicer.cs
-//  Replicates the flow: knife trigger → OverlapBox → SliceObject
-//  → CreateUpperHull / CreateLowerHull → MakeItPhysical → Destroy
-//  Tags: "onion", "garlic" with different inside materials
-//  EzySlice can't run in the browser; we replicate the hull split
-//  geometrically by clipping vertices above/below the slice plane.
-// ════════════════════════════════════════════════════════════════════
-
-// Port of Slicer.MakeItPhysical (Scripts/Slicer.cs:115-119)
-// Adds physics (gravity sim) to a sliced hull
-function makeItPhysical(piece) {
-  fallingPieces.push({
-    mesh: piece.mesh,
-    vel: new THREE.Vector3(
-      (Math.random() - 0.5) * 1.8,
-      1.5 + Math.random() * 2,
-      (Math.random() - 0.5) * 1.8
-    ),
-    rotVel: new THREE.Vector3(Math.random() * 5, Math.random() * 3, Math.random() * 5),
-    settled: false,
-  });
-}
-
-// Port of Slicer.SliceObject → EzySlice obj.Slice(position, transform.up)
-// (Scripts/Slicer.cs:124-132)
-// Since EzySlice is Unity-only, we replicate CreateUpperHull / CreateLowerHull
-// by clipping geometry above/below the knife Y plane.
-function createHull(geo, dir, insideColor) {
-  const cloned = geo.clone();
-  const pos = cloned.attributes.position;
-  for (let i = 0; i < pos.count; i++) {
-    const y = pos.getY(i);
-    if (dir > 0 && y < 0) pos.setY(i, 0);
-    else if (dir < 0 && y > 0) pos.setY(i, 0);
-  }
-  pos.needsUpdate = true;
-  cloned.computeVertexNormals();
-  return cloned;
-}
-
-// Port of Slicer.sliceObject (Scripts/Slicer.cs:55-98)
-function sliceObject(obj) {
-  if (obj.userData.sliced) return;
-  obj.userData.sliced = true;
-  playChopSound();
-  sliceCount++;
-  sliceEl.textContent = sliceCount;
-
-  const origPos = obj.position.clone();
-  const geo = obj.geometry;
-  const tag = obj.userData.tag;
-  const outsideColor = obj.material.color.getHex();
-  // Slicer.cs:8-9 — onionInside / garlicInside
-  const insideColor = obj.userData.insideColor;
-
-  // Slicer.cs:71 — Destroy(objectToBeSliced.gameObject)
-  scene.remove(obj);
-  const idx = interactables.indexOf(obj);
-  if (idx > -1) interactables.splice(idx, 1);
-
-  // Slicer.cs:59 — CreateUpperHull
-  const upperGeo = createHull(geo, 1, insideColor);
-  const upperMat = new THREE.MeshStandardMaterial({ color: outsideColor, roughness: 0.5 });
-  const upper = new THREE.Mesh(upperGeo, upperMat);
-  upper.position.copy(origPos);           // Slicer.cs:63
-  upper.castShadow = true;
-  // Slicer.cs:75-78 — tag + layer
-  upper.userData = { type: 'sliceable', tag, insideColor, sliced: false };
-  scene.add(upper);
-  interactables.push(upper);
-  makeItPhysical({ mesh: upper });        // Slicer.cs:67
-
-  // Slicer.cs:60 — CreateLowerHull
-  const lowerGeo = createHull(geo, -1, insideColor);
-  const lowerMat = new THREE.MeshStandardMaterial({ color: insideColor, roughness: 0.4 });
-  const lower = new THREE.Mesh(lowerGeo, lowerMat);
-  lower.position.copy(origPos);           // Slicer.cs:64
-  lower.castShadow = true;
-  lower.userData = { type: 'sliceable', tag, insideColor, sliced: false };
-  scene.add(lower);
-  interactables.push(lower);
-  makeItPhysical({ mesh: lower });        // Slicer.cs:68
-
-  spawnSliceParticles(origPos, outsideColor);
-}
-
-function spawnSliceParticles(pos, color) {
-  const count = 18;
-  const geo = new THREE.BufferGeometry();
-  const arr = new Float32Array(count * 3);
-  const vels = [];
-  for (let i = 0; i < count; i++) {
-    arr[i * 3] = pos.x; arr[i * 3 + 1] = pos.y; arr[i * 3 + 2] = pos.z;
-    vels.push(new THREE.Vector3((Math.random() - 0.5) * 3, Math.random() * 3 + 1, (Math.random() - 0.5) * 3));
-  }
-  geo.setAttribute('position', new THREE.BufferAttribute(arr, 3));
-  const mat = new THREE.PointsMaterial({ color, size: 0.07, transparent: true, opacity: 1 });
-  const pts = new THREE.Points(geo, mat);
-  scene.add(pts);
-  particles.push({ pts, vels, life: 1 });
-}
-
-// ════════════════════════════════════════════════════════════════════
-//  Knife — port of Scripts/TouchControl2.cs
-//  speedModifierSide / speedModifierDown control drag speed
-//  (Scripts/TouchControl2.cs:9-10)
-//  First finger/mouse drag = move X/Y  (line 30-33)
-//  Second finger / right-drag = rotate Y  (line 48-51)
-// ════════════════════════════════════════════════════════════════════
-let knife;
-const speedModifierSide = 0.006;  // TouchControl2.cs:9
-const speedModifierDown = 0.006;  // TouchControl2.cs:10
-
-function createKnife() {
-  const group = new THREE.Group();
-  // Blade
-  const blade = new THREE.Mesh(
-    new THREE.BoxGeometry(0.04, 1.2, 0.5),
-    new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.8, roughness: 0.2 })
-  );
-  blade.position.y = 0.6;
-  blade.castShadow = true;
-  group.add(blade);
-  // Handle
-  const handle = new THREE.Mesh(
-    new THREE.BoxGeometry(0.08, 0.45, 0.12),
-    new THREE.MeshStandardMaterial({ color: 0x5c3a1e, roughness: 0.7 })
-  );
-  handle.position.y = 1.4;
-  group.add(handle);
-  group.position.set(0, 1.8, 0);
-  group.rotation.z = Math.PI;
-  scene.add(group);
-  return group;
-}
-
-// ════════════════════════════════════════════════════════════════════
-//  Object spawning
-// ════════════════════════════════════════════════════════════════════
-function clearAll() {
-  [...interactables].forEach(o => scene.remove(o));
-  interactables.length = 0;
-  [...fallingPieces].forEach(p => scene.remove(p.mesh));
-  fallingPieces.length = 0;
-  [...particles].forEach(p => scene.remove(p.pts));
-  particles.length = 0;
-  if (knife) { scene.remove(knife); knife = null; }
-  squishData = null;
-  jellyData = null;
-}
-
-function spawnSliceMode() {
-  knife = createKnife();
-  // Slicer.cs:15-16 — onionTag = "onion", garlicTag = "garlic"
-  const onionGeo = new THREE.SphereGeometry(0.45, 28, 28);
-  const garlicGeo = new THREE.DodecahedronGeometry(0.38, 1);
-
-  const onionColor = 0xdda0dd;
-  const onionInsideColor = 0xf5e6f0;
-  const garlicColor = 0xf5f5dc;
-  const garlicInsideColor = 0xfffff0;
-
-  function makeSliceable(geo, color, insideColor, pos, tag) {
-    const mat = new THREE.MeshStandardMaterial({ color, roughness: 0.5, metalness: 0.05 });
-    const m = new THREE.Mesh(geo, mat);
-    m.position.copy(pos); m.castShadow = true;
-    m.userData = { type: 'sliceable', tag, insideColor, sliced: false };
-    scene.add(m); interactables.push(m);
-  }
-  makeSliceable(onionGeo.clone(), onionColor, onionInsideColor, new THREE.Vector3(-1.2, 0.6, 0), 'onion');
-  makeSliceable(onionGeo.clone(), onionColor, onionInsideColor, new THREE.Vector3(0, 0.6, 0.4), 'onion');
-  makeSliceable(onionGeo.clone(), onionColor, onionInsideColor, new THREE.Vector3(0.6, 0.6, -0.5), 'onion');
-  makeSliceable(garlicGeo.clone(), garlicColor, garlicInsideColor, new THREE.Vector3(1.3, 0.55, 0.2), 'garlic');
-  makeSliceable(garlicGeo.clone(), garlicColor, garlicInsideColor, new THREE.Vector3(-0.5, 0.55, -0.4), 'garlic');
-}
-
-function spawnSquishMode() {
-  // Uses CubeSphere geometry (Scripts/CubeSphere.cs) as the stress ball
-  const geo = new THREE.SphereGeometry(1, 48, 48);
-  const mat = new THREE.MeshStandardMaterial({ color: 0xff6b9d, roughness: 0.35, metalness: 0.05 });
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.set(0, 1.2, 0); mesh.castShadow = true;
-  mesh.userData = { type: 'squishable' };
-  scene.add(mesh); interactables.push(mesh);
-  // MeshDeformer.cs — create deformer instance
-  squishData = new MeshDeformer(mesh);
-}
-
-function spawnJellyMode() {
-  const geo = new THREE.BoxGeometry(1.4, 1.4, 1.4, 12, 12, 12);
-  const mat = new THREE.MeshPhysicalMaterial({
-    color: 0x44ddaa, roughness: 0.15, metalness: 0.05,
-    transmission: 0.35, thickness: 1.0, clearcoat: 0.5,
-  });
-  const mesh = new THREE.Mesh(geo, mat);
-  mesh.position.set(0, 0.9, 0); mesh.castShadow = true;
-  mesh.userData = { type: 'jelly' };
-  scene.add(mesh); interactables.push(mesh);
-  jellyData = new JellySystem(mesh);
-}
-
-function setMode(mode) {
-  currentMode = mode;
-  clearAll();
-  if (mode === 'slice') { spawnSliceMode(); hintEl.textContent = 'Click/tap objects to slice \u00b7 Drag background to orbit'; }
-  else if (mode === 'squish') { spawnSquishMode(); hintEl.textContent = 'Click/drag the ball to squish it \u00b7 It springs back'; }
-  else { spawnJellyMode(); hintEl.textContent = 'Click/tap the jelly to make it wobble'; }
-}
-
-// ════════════════════════════════════════════════════════════════════
-//  Input — port of MeshDeformerInput.cs + TouchControl2.cs
-// ════════════════════════════════════════════════════════════════════
-let pointerDown = false;
-let lastPointerX = 0, lastPointerY = 0;
-let rightDrag = false;
-
-function getPointer(e) {
-  const x = e.clientX ?? e.touches?.[0]?.clientX;
-  const y = e.clientY ?? e.touches?.[0]?.clientY;
-  if (x == null) return null;
-  pointer.x = (x / innerWidth) * 2 - 1;
-  pointer.y = -(y / innerHeight) * 2 + 1;
-  return { x, y };
-}
-
-function handleDown(e) {
-  ensureAudio();
-  rightDrag = (e.button === 2);
-  const p = getPointer(e);
-  if (!p) return;
-  pointerDown = true;
-  lastPointerX = p.x; lastPointerY = p.y;
-
-  if (rightDrag) return;
-
-  raycaster.setFromCamera(pointer, camera);
-  const hits = raycaster.intersectObjects(interactables);
-  if (hits.length === 0) return;
-  const hit = hits[0];
-  const obj = hit.object;
-
-  if (currentMode === 'slice' && obj.userData.type === 'sliceable') {
-    controls.enabled = false;
-    // Slicer.cs:26-28 — isTouched triggers slice
-    sliceObject(obj);
-    setTimeout(() => controls.enabled = true, 120);
-  } else if (currentMode === 'squish' && obj.userData.type === 'squishable' && squishData) {
-    controls.enabled = false;
-    // MeshDeformerInput.cs:32-37 — point + normal * forceOffset, then AddDeformingForce
-    const point = hit.point.clone().add(hit.face.normal.clone().multiplyScalar(0.1)); // forceOffset = 0.1
-    squishData.addDeformingForce(point, 10); // MeshDeformerInput.cs:8 — force = 10f
-    playSquishSound();
-    setTimeout(() => controls.enabled = true, 50);
-  } else if (currentMode === 'jelly' && jellyData) {
-    controls.enabled = false;
-    jellyData.poke(hit.point, 0.5);
-    playJellySound();
-    setTimeout(() => controls.enabled = true, 120);
-  }
-}
-
-function handleMove(e) {
-  if (!pointerDown) return;
-  const p = getPointer(e);
-  if (!p) return;
-  const dx = p.x - lastPointerX;
-  const dy = p.y - lastPointerY;
-  lastPointerX = p.x; lastPointerY = p.y;
-
-  // TouchControl2.cs:30-33 — move knife with first finger delta
-  if (currentMode === 'slice' && knife && !rightDrag) {
-    knife.position.x += dx * speedModifierSide * 80;
-    knife.position.y -= dy * speedModifierDown * 80;
-    // SliceListener.cs:9-12 — check overlap on move
-    raycaster.setFromCamera(pointer, camera);
-    const hits = raycaster.intersectObjects(interactables);
-    for (const h of hits) {
-      if (h.object.userData.type === 'sliceable' && !h.object.userData.sliced) {
-        sliceObject(h.object);
-      }
+function spawnSquishObjs(lvl){
+  let idx=0;
+  for(const o of lvl.objs){
+    for(let i=0;i<o.n;i++){
+      const sz=o.s||1;const ci=o.c===-1?i%SQCOL.length:o.c;
+      const geo=new THREE.SphereGeometry(sz,48,48);
+      const mat=new THREE.MeshStandardMaterial({color:SQCOL[ci],roughness:.35,metalness:.05});
+      const mesh=new THREE.Mesh(geo,mat);
+      const spread=o.n>1?2.2:0;
+      mesh.position.set((idx-o.n/2+.5)*spread*0.6,sz+.2,0);
+      mesh.castShadow=true;mesh.userData={type:'squishable'};
+      scene.add(mesh);interactables.push(mesh);
+      deformers.push(new MeshDeformer(mesh));idx++;
     }
   }
+}
 
-  // MeshDeformerInput.cs:13-16 — continuous squish while mouse held
-  if (currentMode === 'squish' && squishData) {
-    raycaster.setFromCamera(pointer, camera);
-    const hits = raycaster.intersectObjects(interactables);
-    if (hits.length > 0 && hits[0].object.userData.type === 'squishable') {
-      const point = hits[0].point.clone().add(hits[0].face.normal.clone().multiplyScalar(0.1));
-      squishData.addDeformingForce(point, 8);
+function spawnJellyObjs(lvl){
+  let idx=0;
+  for(const o of lvl.objs){
+    for(let i=0;i<o.n;i++){
+      const sz=o.s||1;const ci=o.c===-1?i%JLCOL.length:o.c;
+      const geo=new THREE.BoxGeometry(sz*1.4,sz*1.4,sz*1.4,10,10,10);
+      const mat=new THREE.MeshPhysicalMaterial({color:JLCOL[ci],roughness:.15,metalness:.05,transmission:.35,thickness:1,clearcoat:.5});
+      const mesh=new THREE.Mesh(geo,mat);
+      const spread=o.n>1?1.8:0;
+      mesh.position.set((idx-o.n/2+.5)*spread*0.6,sz*.7+.2,0);
+      mesh.castShadow=true;mesh.userData={type:'jelly'};
+      scene.add(mesh);interactables.push(mesh);
+      jellies.push(new JellySystem(mesh));idx++;
     }
-  }
-
-  // TouchControl2.cs:48-51 — rotate knife with second finger / right-drag
-  if (currentMode === 'slice' && knife && rightDrag) {
-    knife.rotation.y += dx * speedModifierSide * 40;
   }
 }
 
-function handleUp() { pointerDown = false; controls.enabled = true; }
+// ═══════════════════════════════════════════════════════════════
+//  KNIFE FACTORY — port of Scripts/TouchControl2.cs
+// ═══════════════════════════════════════════════════════════════
+const speedModSide=.006,speedModDown=.006;
+function createKnife(){
+  const g=new THREE.Group();
+  const skin=save.knife||'default';
+  let bladeW=.04,bladeH=1.2,bladeD=.5,bladeCol=0xcccccc,bladeE=null,handleCol=0x5c3a1e;
+  if(skin==='cleaver'){bladeW=.06;bladeH=.9;bladeD=.7;bladeCol=0xaaaaaa;handleCol=0x3a2010}
+  else if(skin==='katana'){bladeW=.03;bladeH=1.5;bladeD=.35;bladeCol=0xddddee;handleCol=0x1a1a1a}
+  else if(skin==='laser'){bladeW=.02;bladeH=1.3;bladeD=.4;bladeCol=0x00ffff;bladeE=0x00ffff;handleCol=0x333333}
+  const bm=new THREE.MeshStandardMaterial({color:bladeCol,metalness:.8,roughness:.2});
+  if(bladeE)bm.emissive=new THREE.Color(bladeE);if(bladeE)bm.emissiveIntensity=.6;
+  const blade=new THREE.Mesh(new THREE.BoxGeometry(bladeW,bladeH,bladeD),bm);
+  blade.position.y=bladeH/2;blade.castShadow=true;g.add(blade);
+  const handle=new THREE.Mesh(new THREE.BoxGeometry(.08,.45,.12),new THREE.MeshStandardMaterial({color:handleCol,roughness:.7}));
+  handle.position.y=bladeH+.22;g.add(handle);
+  g.position.set(0,1.8,0);g.rotation.z=Math.PI;
+  scene.add(g);return g;
+}
 
-renderer.domElement.addEventListener('pointerdown', handleDown);
-renderer.domElement.addEventListener('pointermove', handleMove);
-renderer.domElement.addEventListener('pointerup', handleUp);
-renderer.domElement.addEventListener('contextmenu', e => e.preventDefault());
-
-// Touch support — port of TouchControl2.cs two-finger handling
-renderer.domElement.addEventListener('touchstart', e => {
-  ensureAudio();
-  if (e.touches.length === 1) handleDown(e.touches[0]);
-}, { passive: true });
-renderer.domElement.addEventListener('touchmove', e => {
-  if (e.touches.length >= 1) handleMove(e.touches[0]);
-  // TouchControl2.cs:42-55 — second finger rotates
-  if (e.touches.length > 1 && knife && currentMode === 'slice') {
-    knife.rotation.y += (e.touches[1].clientX - (lastPointerX || e.touches[1].clientX)) * speedModifierSide * 0.5;
+// ═══════════════════════════════════════════════════════════════
+//  SLICER — port of Scripts/Slicer.cs
+// ═══════════════════════════════════════════════════════════════
+function makeItPhysical(mesh){
+  fallingPieces.push({mesh,vel:new THREE.Vector3((Math.random()-.5)*1.8,1.5+Math.random()*2,(Math.random()-.5)*1.8),
+    rotVel:new THREE.Vector3(Math.random()*5,Math.random()*3,Math.random()*5),settled:false});
+}
+function createHull(geo,dir){
+  const c=geo.clone();const pos=c.attributes.position;
+  for(let i=0;i<pos.count;i++){const y=pos.getY(i);
+    if(dir>0&&y<0)pos.setY(i,0);else if(dir<0&&y>0)pos.setY(i,0);}
+  pos.needsUpdate=true;c.computeVertexNormals();return c;
+}
+function sliceObject(obj,sx,sy){
+  if(obj.userData.sliced)return;obj.userData.sliced=true;
+  playChop();registerAction('slice',sx,sy);
+  const op=obj.position.clone();const geo=obj.geometry;const oc=obj.material.color.getHex();
+  const ic=obj.userData.insideColor;const tag=obj.userData.tag;
+  scene.remove(obj);const idx=interactables.indexOf(obj);if(idx>-1)interactables.splice(idx,1);
+  for(const dir of[1,-1]){
+    const hg=createHull(geo,dir);
+    const hm=new THREE.MeshStandardMaterial({color:dir>0?oc:ic,roughness:.45});
+    const h=new THREE.Mesh(hg,hm);h.position.copy(op);h.castShadow=true;
+    h.userData={type:'sliceable',tag,insideColor:ic,sliced:false};
+    scene.add(h);interactables.push(h);makeItPhysical(h);
   }
-}, { passive: true });
-renderer.domElement.addEventListener('touchend', handleUp);
+  spawnParticles(op,oc);
+}
 
-// ════════════════════════════════════════════════════════════════════
-//  Mode buttons + reset
-// ════════════════════════════════════════════════════════════════════
-document.querySelectorAll('.mbtn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.mbtn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    setMode(btn.dataset.mode);
-  });
+function spawnParticles(pos,color){
+  const n=16+combo*4;const geo=new THREE.BufferGeometry();
+  const arr=new Float32Array(n*3);const vels=[];
+  for(let i=0;i<n;i++){arr[i*3]=pos.x;arr[i*3+1]=pos.y;arr[i*3+2]=pos.z;
+    vels.push(new THREE.Vector3((Math.random()-.5)*3,Math.random()*3+1,(Math.random()-.5)*3))}
+  geo.setAttribute('position',new THREE.BufferAttribute(arr,3));
+  const mat=new THREE.PointsMaterial({color,size:.07,transparent:true,opacity:1});
+  const pts=new THREE.Points(geo,mat);scene.add(pts);particles.push({pts,vels,life:1});
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  GAME FLOW
+// ═══════════════════════════════════════════════════════════════
+function startLevel(id){
+  ea();curLevel=id;curLevelDef=LEVELS[id-1];
+  actionsDone=0;score=0;baseScore=0;comboBonus=0;timeBonus=0;combo=0;lastActionTime=0;
+  timer=curLevelDef.time||0;timerActive=!!curLevelDef.time;timeScale=1;
+  clearScene();applyBg();
+  if(curLevelDef.world==='slice'){knife=createKnife();spawnSliceObjs(curLevelDef);camera.position.set(0,4,6)}
+  else if(curLevelDef.world==='squish'){spawnSquishObjs(curLevelDef);camera.position.set(0,2.5,5)}
+  else{spawnJellyObjs(curLevelDef);camera.position.set(0,2.5,5)}
+  controls.target.set(0,.8,0);
+
+  document.getElementById('hud-level').textContent=`Level ${id}: ${curLevelDef.title}`;
+  document.getElementById('hud-score').textContent='0';
+  document.getElementById('hud-combo').classList.remove('show');
+  document.getElementById('sat-fill').style.width='0%';
+  const te=document.getElementById('hud-timer');
+  te.style.display=curLevelDef.time?'':'none';
+  if(curLevelDef.time)te.textContent=curLevelDef.time+'s';
+
+  state='playing';showScreen(null);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  INPUT
+// ═══════════════════════════════════════════════════════════════
+let pDown=false,lastPX=0,lastPY=0,rDrag=false;
+
+function gp(e){
+  const x=e.clientX??e.touches?.[0]?.clientX;const y=e.clientY??e.touches?.[0]?.clientY;
+  if(x==null)return null;pointer.x=(x/innerWidth)*2-1;pointer.y=-(y/innerHeight)*2+1;return{x,y};
+}
+
+function onDown(e){
+  ea();if(state!=='playing')return;
+  rDrag=(e.button===2);const p=gp(e);if(!p)return;
+  pDown=true;lastPX=p.x;lastPY=p.y;
+  if(rDrag)return;
+
+  raycaster.setFromCamera(pointer,camera);
+  const hits=raycaster.intersectObjects(interactables);
+  if(!hits.length)return;const hit=hits[0];const obj=hit.object;
+
+  if(curLevelDef.world==='slice'&&obj.userData.type==='sliceable'){
+    controls.enabled=false;sliceObject(obj,p.x,p.y);setTimeout(()=>controls.enabled=true,120);
+  }else if(curLevelDef.world==='squish'&&obj.userData.type==='squishable'){
+    controls.enabled=false;
+    const pt=hit.point.clone().add(hit.face.normal.clone().multiplyScalar(.1));
+    const def=deformers.find(d=>d.mesh===obj);if(def)def.addForce(pt,10);
+    playSquish();registerAction('squish',p.x,p.y);
+    setTimeout(()=>controls.enabled=true,50);
+  }else if(curLevelDef.world==='jelly'){
+    controls.enabled=false;
+    const js=jellies.find(j=>j.mesh===obj);if(js){js.poke(hit.point,.5);playJelly();registerAction('poke',p.x,p.y)}
+    setTimeout(()=>controls.enabled=true,120);
+  }
+}
+
+function onMove(e){
+  if(!pDown||state!=='playing')return;const p=gp(e);if(!p)return;
+  const dx=p.x-lastPX,dy=p.y-lastPY;lastPX=p.x;lastPY=p.y;
+
+  if(curLevelDef.world==='slice'&&knife&&!rDrag){
+    knife.position.x+=dx*speedModSide*80;knife.position.y-=dy*speedModDown*80;
+    raycaster.setFromCamera(pointer,camera);
+    for(const h of raycaster.intersectObjects(interactables)){
+      if(h.object.userData.type==='sliceable'&&!h.object.userData.sliced)sliceObject(h.object,p.x,p.y);
+    }
+  }
+  if(curLevelDef.world==='squish'){
+    raycaster.setFromCamera(pointer,camera);
+    const hits=raycaster.intersectObjects(interactables);
+    if(hits.length&&hits[0].object.userData.type==='squishable'){
+      const pt=hits[0].point.clone().add(hits[0].face.normal.clone().multiplyScalar(.1));
+      const def=deformers.find(d=>d.mesh===hits[0].object);if(def)def.addForce(pt,8);
+    }
+  }
+  if(curLevelDef.world==='slice'&&knife&&rDrag)knife.rotation.y+=dx*speedModSide*40;
+}
+
+function onUp(){pDown=false;controls.enabled=true}
+
+renderer.domElement.addEventListener('pointerdown',onDown);
+renderer.domElement.addEventListener('pointermove',onMove);
+renderer.domElement.addEventListener('pointerup',onUp);
+renderer.domElement.addEventListener('contextmenu',e=>e.preventDefault());
+renderer.domElement.addEventListener('touchstart',e=>{ea();if(e.touches.length===1)onDown(e.touches[0])},{passive:true});
+renderer.domElement.addEventListener('touchmove',e=>{if(e.touches.length>=1)onMove(e.touches[0])},{passive:true});
+renderer.domElement.addEventListener('touchend',onUp);
+
+// ═══════════════════════════════════════════════════════════════
+//  BUTTON WIRING
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('btn-play').addEventListener('click',()=>{
+  state='levels';buildWorldTabs();buildLevelSelect('slice');updateStarDisplays();showScreen('screen-levels');
 });
-document.getElementById('reset-btn').addEventListener('click', () => setMode(currentMode));
+document.getElementById('btn-back').addEventListener('click',()=>{state='title';updateStarDisplays();showScreen('screen-title')});
+document.getElementById('pause-btn').addEventListener('click',()=>{if(state==='playing'){state='paused';showScreen('screen-pause')}});
+document.getElementById('btn-resume').addEventListener('click',()=>{state='playing';showScreen(null)});
+document.getElementById('btn-quit').addEventListener('click',()=>{state='levels';clearScene();buildLevelSelect(curLevelDef.world);updateStarDisplays();showScreen('screen-levels')});
+document.getElementById('btn-retry').addEventListener('click',()=>startLevel(curLevel));
+document.getElementById('btn-next').addEventListener('click',()=>{if(curLevel<30)startLevel(curLevel+1)});
+document.getElementById('btn-fail-retry').addEventListener('click',()=>startLevel(curLevel));
+document.getElementById('btn-fail-quit').addEventListener('click',()=>{state='levels';clearScene();buildLevelSelect(curLevelDef.world);updateStarDisplays();showScreen('screen-levels')});
+document.getElementById('shop-btn').addEventListener('click',()=>{state='shop';buildShop();showScreen('screen-shop')});
+document.getElementById('btn-shop-back').addEventListener('click',()=>{state='levels';showScreen('screen-levels')});
 
-// ════════════════════════════════════════════════════════════════════
-//  Animation loop
-// ════════════════════════════════════════════════════════════════════
-const clock = new THREE.Clock();
-
-function animate() {
+// ═══════════════════════════════════════════════════════════════
+//  ANIMATION LOOP
+// ═══════════════════════════════════════════════════════════════
+const clock=new THREE.Clock();
+function animate(){
   requestAnimationFrame(animate);
-  const dt = Math.min(clock.getDelta(), 0.05);
+  const rawDt=Math.min(clock.getDelta(),.05);
+  const dt=rawDt*timeScale;
   controls.update();
 
-  // Falling pieces — gravity sim (replaces Unity Rigidbody from MakeItPhysical)
-  for (const p of fallingPieces) {
-    if (p.settled) continue;
-    p.vel.y -= 9.81 * dt;
-    p.mesh.position.addScaledVector(p.vel, dt);
-    p.mesh.rotation.x += p.rotVel.x * dt;
-    p.mesh.rotation.z += p.rotVel.z * dt;
-    if (p.mesh.position.y < 0.2) {
-      p.mesh.position.y = 0.2;
-      p.vel.y = Math.abs(p.vel.y) * 0.25;
-      p.vel.multiplyScalar(0.4);
-      p.rotVel.multiplyScalar(0.4);
-      if (Math.abs(p.vel.y) < 0.08) { p.settled = true; p.vel.set(0, 0, 0); }
+  // Timer
+  if(state==='playing'&&timerActive){
+    timer-=rawDt;
+    document.getElementById('hud-timer').textContent=Math.max(0,Math.ceil(timer))+'s';
+    if(timer<=0){
+      timerActive=false;state='fail';playFail();
+      document.getElementById('fail-remaining').textContent=(curLevelDef.target-actionsDone);
+      showScreen('screen-fail');
     }
   }
 
-  // MeshDeformer.Update (Scripts/MeshDeformer.cs:67-75)
-  if (squishData) squishData.update(dt);
+  // Screen shake
+  if(shakeAmt>.001){
+    camera.position.x+=((Math.random()-.5)*shakeAmt);
+    camera.position.y+=((Math.random()-.5)*shakeAmt);
+    shakeAmt*=.85;
+  }
 
-  // Jelly.FixedUpdate (Scripts/Jelly.cs:35-48)
-  if (jellyData) jellyData.update();
+  // Falling pieces
+  for(const p of fallingPieces){
+    if(p.settled)continue;p.vel.y-=9.81*dt;p.mesh.position.addScaledVector(p.vel,dt);
+    p.mesh.rotation.x+=p.rotVel.x*dt;p.mesh.rotation.z+=p.rotVel.z*dt;
+    if(p.mesh.position.y<.2){p.mesh.position.y=.2;p.vel.y=Math.abs(p.vel.y)*.25;
+      p.vel.multiplyScalar(.4);p.rotVel.multiplyScalar(.4);
+      if(Math.abs(p.vel.y)<.08){p.settled=true;p.vel.set(0,0,0)}}
+  }
+
+  // Physics
+  for(const d of deformers)d.update(dt);
+  for(const j of jellies)j.update();
 
   // Particles
-  for (let i = particles.length - 1; i >= 0; i--) {
-    const ps = particles[i];
-    ps.life -= dt * 2.2;
-    if (ps.life <= 0) { scene.remove(ps.pts); particles.splice(i, 1); continue; }
-    ps.pts.material.opacity = ps.life;
-    const pos = ps.pts.geometry.attributes.position;
-    for (let j = 0; j < ps.vels.length; j++) {
-      ps.vels[j].y -= 6 * dt;
-      pos.setX(j, pos.getX(j) + ps.vels[j].x * dt);
-      pos.setY(j, pos.getY(j) + ps.vels[j].y * dt);
-      pos.setZ(j, pos.getZ(j) + ps.vels[j].z * dt);
+  for(let i=particles.length-1;i>=0;i--){
+    const ps=particles[i];ps.life-=dt*2.2;
+    if(ps.life<=0){scene.remove(ps.pts);particles.splice(i,1);continue}
+    ps.pts.material.opacity=ps.life;
+    const pos=ps.pts.geometry.attributes.position;
+    for(let j=0;j<ps.vels.length;j++){
+      ps.vels[j].y-=6*dt;
+      pos.setX(j,pos.getX(j)+ps.vels[j].x*dt);
+      pos.setY(j,pos.getY(j)+ps.vels[j].y*dt);
+      pos.setZ(j,pos.getZ(j)+ps.vels[j].z*dt);
     }
-    pos.needsUpdate = true;
+    pos.needsUpdate=true;
   }
 
-  renderer.render(scene, camera);
+  renderer.render(scene,camera);
 }
 
-window.addEventListener('resize', () => {
-  camera.aspect = innerWidth / innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(innerWidth, innerHeight);
+window.addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
 });
 
-setMode('slice');
-animate();
-  </script>
+// ═══════════════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════════════
+updateStarDisplays();applyBg();showScreen('screen-title');animate();
+</script>
 </body>
 </html>
