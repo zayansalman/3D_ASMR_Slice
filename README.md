@@ -6,6 +6,10 @@
 [![C#](https://img.shields.io/badge/C%23-239120?logo=c-sharp&logoColor=white)](https://docs.microsoft.com/en-us/dotnet/csharp/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
+## [Play Now in Your Browser](https://zayansalman.github.io/3D_ASMR_Slice/)
+
+> No install needed — click the link above to play the web version. The browser build is a faithful JavaScript/Three.js port of the original C# Unity scripts in `Scripts/`. Every physics formula, variable name, and constant is preserved from the dissertation code, with inline comments referencing the original C# source files and line numbers. See [`web-build/index.html`](web-build/index.html) for the port.
+
 ---
 
 ## Why this project?
@@ -66,11 +70,10 @@ The goal is a small, playable proof-of-concept that could support stress relief 
    - Double-click the main scene (e.g. slicing + deformation setup)
    - Press **Play**
 
-4. **Play in the browser (WebGL)**
-   - Once GitHub Pages is enabled for this repo, the CI pipeline will publish a WebGL build.
-   - The default URL will be:
-     - `https://YOUR_GITHUB_USERNAME.github.io/3D_ASMR_Slice/`
-   - Replace `YOUR_GITHUB_USERNAME` with your GitHub handle and enable **GitHub Pages → Source: GitHub Actions** in your repo settings.
+4. **Play in the browser**
+   - The game is live at **https://zayansalman.github.io/3D_ASMR_Slice/**
+   - No install needed — works on desktop and mobile browsers
+   - This is a faithful Three.js port of the C# scripts (same physics, same constants)
 
 5. **On a touch device**
    - Build to Android/iOS from **File → Build Settings**, or use [Unity Remote](https://docs.unity3d.com/Manual/UnityRemote5.html) for quick testing
@@ -86,6 +89,7 @@ For detailed setup, build options (WebGL, mobile), CI-based WebGL deployment, an
 ├── Audio/          # ASMR / chop sound clips
 ├── PreFab/         # Prefabs (knife, sliceables, deformable objects)
 ├── Scripts/        # All game logic (slicing, touch, deformation, procedural meshes)
+├── web-build/      # Browser port (Three.js) — faithful translation of the C# scripts
 ├── docs/           # Report, architecture, build instructions
 ├── README.md       # This file
 └── LICENSE         # MIT
