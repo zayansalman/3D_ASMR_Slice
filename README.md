@@ -6,17 +6,7 @@
 [![C#](https://img.shields.io/badge/C%23-239120?logo=c-sharp&logoColor=white)](https://docs.microsoft.com/en-us/dotnet/csharp/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-## [Play Now in Your Browser](https://zayansalman.github.io/3D_ASMR_Slice/)
-
-> No install needed — click the link above to play the web version. The browser build is a faithful JavaScript/Three.js port of the original C# Unity scripts in `Scripts/`. Every physics formula, variable name, and constant is preserved from the dissertation code, with inline comments referencing the original C# source files and line numbers. See [`web-build/index.html`](web-build/index.html) for the port.
-
-### Dissertation evidence
-
-| Evidence | Link |
-|----------|------|
-| **Playable game** | [https://zayansalman.github.io/3D_ASMR_Slice/](https://zayansalman.github.io/3D_ASMR_Slice/) |
-| **Original C# implementation** | [Scripts/](Scripts/) (MeshDeformer, Jelly, Slicer, TouchControl2, chopSound, CubeSphere, etc.) |
-| **Web port (faithful translation)** | [web-build/index.html](web-build/index.html) — same algorithms and constants, with inline references to C# source lines |
+**Original C# implementation:** [Scripts/](Scripts/) — MeshDeformer, Jelly, Slicer, TouchControl2, chopSound, CubeSphere, etc.
 
 ---
 
@@ -32,30 +22,18 @@ The goal is a small, playable proof-of-concept that could support stress relief 
 
 ---
 
-## What you can do in the game
+## What's actually implemented
 
 | Feature | Description |
 |--------|-------------|
-| **30 levels across 3 worlds** | Slice (cut vegetables), Squish (stress-ball deformation), Jelly (wobble physics). Escalating difficulty with time pressure. |
-| **Scoring & combos** | Rapid actions within 1.5s build a combo multiplier (x2, x3, x4…). Time bonuses on timed levels. |
-| **Star ratings** | 1–3 stars per level based on score. Collect stars to unlock cosmetics. |
-| **Unlockable knives** | Classic, Cleaver (★10), Katana (★25), Laser (★45) — each with unique geometry and materials. |
-| **Background themes** | Midnight, Deep Space (★15), Sunset (★30), Ocean (★50). |
-| **Slice onions, garlic, carrots, watermelon, cucumber** | Objects split with physics; chop sounds play on slice. |
-| **Deformable surfaces** | Tap or drag on stress balls; they dent and spring back. |
-| **Jelly wobble** | Squishy jelly cubes that jiggle and settle on poke. |
-| **Touch controls** | One finger to interact, second finger to rotate (slice mode). Built for phones/tablets. |
-| **Juice** | Screen shake, haptic feedback, combo float text, slow-motion on level completion, particle bursts scaled to combo. |
+| **Real-time mesh slicing** | `Slicer.cs` uses EzySlice to cut tagged objects (`onion`, `garlic`, `sand`) into upper/lower hulls with new materials, colliders, and rigidbodies. |
+| **Chop sound** | `chopSound.cs` plays an audio clip on slice contact. |
+| **Spring-mass deformation** | `MeshDeformer.cs` dents and recovers a mesh's surface in response to applied force (e.g. mouse/touch input via `MeshDeformerInput.cs`). |
+| **Jelly wobble** | `Jelly.cs` simulates squishy, springy vertex motion. |
+| **Procedural geometry** | `CubeSphere.cs`, `RoundedCube.cs`, `Stress Ball/Grid.cs` build meshes at runtime. |
+| **Touch controls** | `TouchControl2.cs` — one finger to move the knife, second finger to rotate. |
 
-**Best experience:** Touch screen + headphones (play on your phone for the full effect).
-
-### Monetization roadmap
-
-This codebase is structured for mobile wrapping via [Capacitor](https://capacitorjs.com/). Next steps:
-
-1. `npm init` + Capacitor setup to wrap as iOS/Android app
-2. [AdMob](https://admob.google.com/) interstitial ads between levels (ad placement div already wired)
-3. App Store / Google Play submission with screenshots and metadata
+See [Architecture & scripts](docs/ARCHITECTURE.md) for the full breakdown of how these fit together.
 
 ---
 
@@ -91,12 +69,7 @@ This codebase is structured for mobile wrapping via [Capacitor](https://capacito
    - Double-click the main scene (e.g. slicing + deformation setup)
    - Press **Play**
 
-4. **Play in the browser**
-   - The game is live at **https://zayansalman.github.io/3D_ASMR_Slice/**
-   - No install needed — works on desktop and mobile browsers
-   - This is a faithful Three.js port of the C# scripts (same physics, same constants)
-
-5. **On a touch device**
+4. **On a touch device**
    - Build to Android/iOS from **File → Build Settings**, or use [Unity Remote](https://docs.unity3d.com/Manual/UnityRemote5.html) for quick testing
 
 For detailed setup, build options (WebGL, mobile), CI-based WebGL deployment, and troubleshooting, see **[Building & running](docs/BUILD_AND_RUN.md)**.
@@ -110,7 +83,6 @@ For detailed setup, build options (WebGL, mobile), CI-based WebGL deployment, an
 ├── Audio/          # ASMR / chop sound clips
 ├── PreFab/         # Prefabs (knife, sliceables, deformable objects)
 ├── Scripts/        # All game logic (slicing, touch, deformation, procedural meshes)
-├── web-build/      # Browser port (Three.js) — faithful translation of the C# scripts
 ├── docs/           # Report, architecture, build instructions
 ├── README.md       # This file
 └── LICENSE         # MIT
