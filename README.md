@@ -17,6 +17,7 @@
 | **Playable game** | [https://zayansalman.github.io/3D_ASMR_Slice/](https://zayansalman.github.io/3D_ASMR_Slice/) |
 | **Original C# implementation** | [Scripts/](Scripts/) (MeshDeformer, Jelly, Slicer, TouchControl2, chopSound, CubeSphere, etc.) |
 | **Web port (faithful translation)** | [web-build/index.html](web-build/index.html) — same algorithms and constants, with inline references to C# source lines |
+| **User study (17 participants)** | [docs/RESEARCH_AND_EVALUATION.md](docs/RESEARCH_AND_EVALUATION.md) — method, results and limitations |
 
 ---
 
@@ -29,6 +30,24 @@ Satisfying videos and ASMR content are hugely popular—and research suggests th
 - **A 3D game** — so you’re not just watching; you’re *doing* it, with your hands
 
 The goal is a small, playable proof-of-concept that could support stress relief and, over time, potentially help with anxiety and low mood—backed by the ideas behind satisfying and ASMR media.
+
+---
+
+## What the study found
+
+The dissertation build was tested with 17 Brunel students and staff, who played in a browser and then answered a questionnaire ([full write-up](docs/RESEARCH_AND_EVALUATION.md)).
+
+- **15 of 16** felt at least slightly more relaxed after playing; 7 felt clearly more relaxed.
+- **Slicing was the favourite level** for 13 of 16, ahead of the stress ball (3) and cloth (0).
+- **12 of 16** would recommend it for stress relief; average rating **3.75 / 5**.
+- **Reliability mattered:** only 9 of 15 said it ran smoothly on their device, and one player said a broken level stressed them more.
+
+The result supports slicing as the lead mechanic and points to sound design and stability as the next priorities.
+
+<p>
+  <img src="docs/screenshots/slicing-level.jpg" alt="Vegetable slicing level" width="49%">
+  <img src="docs/screenshots/stress-ball-level.jpg" alt="Stress ball level" width="49%">
+</p>
 
 ---
 
@@ -78,7 +97,7 @@ This codebase is structured for mobile wrapping via [Capacitor](https://capacito
 
 1. **Clone the repo**
    ```bash
-   git clone https://github.com/YOUR_USERNAME/3D_ASMR_Slice.git
+   git clone https://github.com/zayansalman/3D_ASMR_Slice.git
    cd 3D_ASMR_Slice
    ```
 
@@ -111,7 +130,8 @@ For detailed setup, build options (WebGL, mobile), CI-based WebGL deployment, an
 ├── PreFab/         # Prefabs (knife, sliceables, deformable objects)
 ├── Scripts/        # All game logic (slicing, touch, deformation, procedural meshes)
 ├── web-build/      # Browser port (Three.js) — faithful translation of the C# scripts
-├── docs/           # Report, architecture, build instructions
+├── docs/           # Report, research & evaluation, architecture, build instructions
+├── Prototypes~/    # Early touch-input test (ignored by Unity)
 ├── README.md       # This file
 └── LICENSE         # MIT
 ```
@@ -139,6 +159,7 @@ See [CONTRIBUTIONS.md](CONTRIBUTIONS.md) for what is covered and why tests were 
 | Document | Description |
 |----------|-------------|
 | [**Project report**](docs/PROJECT_REPORT.md) | Rationale, design, implementation, and reflection (report-style). |
+| [**Research & evaluation**](docs/RESEARCH_AND_EVALUATION.md) | Literature basis, user study (17 participants), results and limitations. |
 | [**Building & running**](docs/BUILD_AND_RUN.md) | Unity setup, building for Web (WebGL), Android, iOS. |
 | [**Architecture & scripts**](docs/ARCHITECTURE.md) | Codebase layout and script responsibilities. |
 | [**Contributions & value**](CONTRIBUTIONS.md) | What was built, by whom, and what value each part adds. |
@@ -153,6 +174,6 @@ This project is licensed under the **MIT License** — see [LICENSE](LICENSE).
 
 ## Author
 
-**Zayan Khan** — Final year Computer Science project.
+**Zayan Khan** — Final year Computer Science project, Brunel University London (CS3072).
 
 If you use this repo for learning or as a reference, a link back or credit is appreciated.
