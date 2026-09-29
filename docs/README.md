@@ -5,5 +5,6 @@
 | [**Project report**](PROJECT_REPORT.md) | Rationale, design, implementation, and reflection (report-style). |
 | [**Building & running**](BUILD_AND_RUN.md) | Unity setup, building for Web (WebGL), Android, iOS. |
 | [**Architecture & scripts**](ARCHITECTURE.md) | Codebase layout and script responsibilities. |
+| [**Research & evaluation**](RESEARCH_AND_EVALUATION.md) | Literature basis, user study design, results and limitations. |
 
 Start with the [main README](../README.md) in the repo root.
